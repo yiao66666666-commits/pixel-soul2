@@ -11,73 +11,67 @@
         body {
             background: var(--bg); color: #fff; font-family: "Courier New", monospace;
             margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
             background-size: 100% 4px, 4px 100%;
         }
 
-        /* 房号与在线状态 */
-        .status-bar { height: 30px; background: #000; border-bottom: 1px solid var(--blue); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.6rem; color: var(--blue); flex-shrink: 0; }
-
-        /* 头像栏 */
-        .player-bar { height: 75px; border-bottom: 2px solid var(--blue); display: flex; align-items: center; padding: 0 10px; gap: 15px; overflow-x: auto; background: rgba(0,0,0,0.8); flex-shrink: 0; }
-        .p-avatar { width: 42px; height: 42px; border: 2px solid var(--grey); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; background: #111; transition: 0.3s; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); }
+        /* 紧凑状态栏 */
+        .status-bar { height: 25px; background: #000; border-bottom: 1px solid var(--blue); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.6rem; flex-shrink: 0; }
+        .player-bar { height: 75px; border-bottom: 2px solid var(--blue); display: flex; align-items: center; padding: 0 10px; gap: 12px; overflow-x: auto; background: rgba(0,0,0,0.8); flex-shrink: 0; }
+        .p-avatar { width: 42px; height: 42px; border: 2px solid var(--grey); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; background: #111; }
+        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); animation: pulse 1s infinite; transform: scale(1.05); }
         .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -10px; right: -10px; font-size: 0.7rem; }
         .p-avatar .name { position: absolute; bottom: -16px; font-size: 0.5rem; color: #888; width: 50px; text-align: center; white-space: nowrap; overflow: hidden; }
-        .p-avatar.active .name { color: var(--gold); font-weight: bold; }
 
-        /* 卡牌阵列 */
         .main-deck { flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; overflow-y: auto; align-content: start; }
-        .card { aspect-ratio: 2/3; background: var(--dark); border: 2px solid var(--blue); cursor: pointer; animation: wobble 4s infinite step-end; }
+        .card { aspect-ratio: 2/3; background: var(--dark); border: 2px solid var(--blue); cursor: pointer; transition: 0.1s; }
         .card.flipped { opacity: 0.1; filter: grayscale(1); border-color: #444; pointer-events: none; }
 
-        /* 全屏红色警告层 */
         #alert-layer { position: fixed; inset: 0; background: rgba(255, 0, 85, 0.4); display: none; z-index: 9000; animation: flash 0.2s infinite; pointer-events: none; align-items: center; justify-content: center; }
         @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 
-        /* 语音授权页 */
-        #v-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-
-        /* 弹出档案卡 */
         #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; pointer-events: none; }
-        .focused-card { width: 90%; max-width: 340px; min-height: 400px; background: #2b0b3d; border: 6px solid var(--grey); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; box-shadow: 10px 10px 0 #000; }
+        .focused-card { width: 90%; max-width: 340px; min-height: 400px; background: #2b0b3d; border: 6px solid var(--grey); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; }
         .focused-card.unlocked { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
 
-        .chat-panel { height: 120px; border-top: 4px solid var(--pink); background: rgba(0,0,0,0.95); display: flex; flex-direction: column; z-index: 1000; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.75rem; color: #ccc; }
+        .chat-panel { height: 110px; border-top: 4px solid var(--pink); background: rgba(0,0,0,0.95); display: flex; flex-direction: column; z-index: 1000; }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 0.75rem; color: #ccc; }
         .bottom-console { height: 75px; border-top: 4px solid var(--blue); background: #000; display: flex; padding: 10px; gap: 8px; z-index: 1000; }
 
-        .p-btn { background: #000; color: var(--blue); border: 4px solid var(--blue); cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 4px 4px 0 #000; display: flex; align-items: center; justify-content: center; }
-        .p-btn.active { background: var(--green); color: #000; border-color: #fff; }
-        .p-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .p-btn { background: #000; color: var(--blue); border: 4px solid var(--blue); cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 4px 4px 0 #000; display: flex; align-items: center; justify-content: center; flex: 1; }
+        .p-btn.gold { color: var(--gold); border-color: var(--gold); }
+        .p-btn.pink { color: var(--pink); border-color: var(--pink); }
+        .p-btn.active { background: var(--green); color: #000; }
+        .p-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #444; color: #444; }
 
-        @keyframes wobble { 0%, 100% { transform: rotate(1deg); } 50% { transform: rotate(-1deg); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } }
         #setup { position: fixed; inset: 0; background: var(--bg); z-index: 8000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
+        #v-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="setup">
-    <h1 style="color:var(--pink); font-size: 2.2rem; text-shadow: 6px 6px 0 #000;">PIXEL SOUL</h1>
-    <input type="text" id="nick-in" placeholder="输入你的昵称..." style="padding:12px; border:4px solid var(--blue); background:#000; color:#fff; width:100%; max-width:280px; margin-bottom:15px; font-family: inherit;">
-    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button class="p-btn" style="padding:15px 20px" onclick="startApp(true)">创建房间</button>
-        <button class="p-btn" style="padding:15px 20px" onclick="startApp(false)">加入房间</button>
+    <h1 style="color:var(--pink); font-size: 2.2rem; text-shadow: 6px 6px 0 #000; margin-bottom: 20px;">PIXEL SOUL</h1>
+    <input type="text" id="nick-in" placeholder="输入昵称..." style="padding:12px; border:4px solid var(--blue); background:#000; color:#fff; width:100%; max-width:280px; margin-bottom:15px; font-family: inherit;">
+    <div style="display: flex; gap: 10px;">
+        <button class="p-btn" style="padding:15px 25px" onclick="startApp(true)">创 房</button>
+        <button class="p-btn" style="padding:15px 25px" onclick="startApp(false)">加 入</button>
     </div>
-    <input type="text" id="id-in" placeholder="粘贴房号..." style="padding:12px; border:4px solid #444; background:#000; color:#fff; width:100%; max-width:280px; font-family: inherit;">
+    <input type="text" id="id-in" placeholder="粘贴房号..." style="padding:10px; border:4px solid #444; background:#000; color:#fff; width:260px; margin-top:10px;">
 </div>
 
 <div id="v-gate">
     <h2 style="color:var(--gold)">信号塔已连接</h2>
-    <p style="font-size:0.75rem; color:#888; margin-bottom:30px;">点击下方按钮开启语音及点赞系统</p>
-    <button class="p-btn" style="padding:20px 40px; font-size:1.2rem; border-color:var(--gold); color:var(--gold);" onclick="activateVoice()">进入灵魂对讲</button>
+    <p style="font-size:0.75rem; color:#888; margin-bottom:30px;">点击下方开启点赞及同步系统</p>
+    <button class="p-btn" style="padding:20px 40px; font-size:1.2rem; color:var(--gold); border-color:var(--gold);" onclick="activateVoice()">进入灵魂对讲</button>
 </div>
 
-<div id="alert-layer"><div style="font-size:2rem; color:#fff; text-shadow:4px 4px 0 #000; font-weight:bold; text-align:center;">注意：<br>你被转移了！！</div></div>
+<div id="alert-layer"><div style="font-size:2rem; color:#fff; text-shadow:4px 4px 0 #000; font-weight:bold;">转移目标：是你！！</div></div>
 
 <div class="status-bar">
-    <span>房号: <b id="room-text">----</b></span>
-    <span id="player-count">在线: 1</span>
+    <span>ROOM ID: <b id="room-text">----</b></span>
+    <span id="player-count">ONLINE: 1</span>
 </div>
 
 <div class="player-bar" id="p-bar"></div>
@@ -98,8 +92,8 @@
 
 <div class="bottom-console">
     <button id="mic-btn" class="p-btn" style="border-color:var(--green); color:var(--green);" onclick="toggleMic()" disabled>麦克风:关</button>
-    <button id="like-btn" class="p-btn" style="flex:1.5; color:var(--gold); border-color:var(--gold);" onclick="handleLike()" disabled>点赞 (LIKE!)</button>
-    <button id="trans-btn" class="p-btn" style="color:var(--pink); border-color:var(--pink);" onclick="openTrans()" disabled>转移卡</button>
+    <button id="like-btn" class="p-btn gold" style="flex:1.5;" onclick="handleLike()" disabled>点赞 (LIKE!)</button>
+    <button id="trans-btn" class="p-btn pink" onclick="openTrans()" disabled>转移卡</button>
 </div>
 
 <div id="audio-container" style="display:none;"></div>
@@ -114,13 +108,9 @@
 <script>
     const questions = ["1、找一位玩家问ta“你觉得我是一个什么样的人？”", "2、描述一个你因为嫉妒，而故意在背后说某人坏话的瞬间。", "3、如果这几个人里必须断绝一段关系，你会最先放弃谁？", "4、回忆一个你对我感到最失望，觉得“这辈子也就这样了”的瞬间。", "5、你灵魂里最“贪婪”的部分，放出来它会做出什么事？", "6、如果你明天陷入绝境，谁会是你的“避难所”？", "7、问一位玩家“说出一个我完全没意识到的性格死穴”。", "8、谁的离去，会让你觉得这个圈子彻底失去了意义？", "9、问一位玩家“你曾为了面子，吞下了哪句想爆粗的真心话？”", "10、如果生命交换24小时，你最想体验谁的那段人生？", "11、如果时间重来，你最想改变的一件事是什么？", "12、分享你最绝望的瞬间。", "13、找一位玩家问“撇开职业光环，你觉得我们可以成为好朋友吗？”", "14、1000万的彩票必须送出去，你会送给在座的谁？", "15、谁是你曾经最看不起、但现在由衷佩服的人？", "16、如果你明天就要消失，最想坦白的一个负面真相是什么？", "17、找一位玩家问“你觉得我性格里的哪部分你一直看不惯？”", "18、描述一个你觉得你最“孤独”的时刻。", "19、合伙干一件“违背常规”的坏事，你会选谁当搭档？", "20、你觉得我们这段关系的“保质期”取决于什么？", "21、谁的哪句评价，曾让你在深夜反复咀嚼、背脊发凉？", "22、你想偷走谁的哪种天赋，哪怕让他从此平庸？", "23、找一位玩家问“说出一个你一直没敢向我确认的负面传闻”。", "24、如果交情有“重启键”，你最想回到哪个时间点？", "25、你曾在哪一瞬间，觉得我极其自私且不顾你的感受？", "26、谁是这个圈子里最会演戏的伪装者？抓到过什么破绽？", "27、你这辈子最对不起的人是谁？为什么？", "28、谁最像是一个“能量黑洞”，让你接触后精疲力竭？", "29、如果我们被关进密室只能活一人，最后的幸存者是谁？", "30、你觉得我身上最“矫情”的地方在哪里？", "31、谁最让你感到“共振”？那种即便不语也能灵魂震荡的感应。", "32、描述一个你觉得我最面目可憎、冷冰冰的瞬间。", "33、如果现在就是终点，你在这个星球留下的最真实痕迹是什么？", "34、如果一起流亡，谁会是最先崩溃、甚至背叛大家的人？", "35、描述一次你感到极其强烈的“归属感”。", "36、如果你死后能保留一段记忆寻找某人，你会保留关于谁的什么？", "37、问在座一位“描述一个我身上最廉价的品质，哪怕我引以为傲”。", "38、谁是你最想深交但一直觉得“气场不合”的人？", "39、说出一个你删除的一条信息，为什么删除？", "40、圈子里谁是你眼中那个除了资源一无是处的蠢货？"];
     const avatars = ["🃏", "🎭", "💀", "🕯️", "🌑", "🪐", "🍷", "⛓️"];
-    const iceCfg = { iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun.anyfirewall.com:3478' }
-    ]};
+    const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
 
-    let peer, conns = [], myNick = "", myAvatar = "", isHost = false, players = [], flipped = new Set(), likes = new Set(), turnIdx = 0, localStream = null, isMuted = true;
+    let peer, conns = [], myNick = "", myAvatar = "", isHost = false, players = [], flipped = new Set(), likes = new Set(), turnIdx = 0, isShowing = false, localStream = null, isMuted = true;
 
     function startApp(host) {
         myNick = document.getElementById('nick-in').value || "ANON";
@@ -129,8 +119,7 @@
         document.getElementById('setup').style.display = 'none';
         document.getElementById('v-gate').style.display = 'flex';
         renderDeck();
-        
-        peer = new Peer({ config: iceCfg, secure: true, debug: 1 });
+        peer = new Peer({ config: iceCfg, secure: true });
         peer.on('open', id => {
             document.getElementById('room-text').innerText = id;
             if(isHost) { players = [{id, nick: myNick, avatar: myAvatar, canTrans: true, isSpeaking: false}]; sync(); } 
@@ -149,12 +138,7 @@
         } catch (e) { console.log("Voice setup failed"); }
     }
 
-    function connect(rid) { 
-        const c = peer.connect(rid, { reliable: true }); 
-        setupConn(c); 
-        // 跨网自动重试重连
-        setTimeout(() => { if(conns.length === 0) peer.connect(rid, { reliable: true }); }, 3000);
-    }
+    function connect(rid) { const c = peer.connect(rid, { reliable: true }); setupConn(c); }
 
     function setupConn(c) {
         c.on('open', () => {
@@ -170,21 +154,16 @@
                 }
             } else if(data.type === 'SYNC') {
                 players = data.players; flipped = new Set(data.flipped); turnIdx = data.turnIdx;
+                isShowing = data.isShowing;
+                if(!isShowing) closeFocus(); 
                 if(data.alertId === peer.id) triggerAlert();
                 renderPlayers(); renderDeck(); updateTurnStatus();
             } else if(data.type === 'DRAW') {
-                openFocus(data.index);
+                isShowing = true; openFocus(data.index);
             } else if(data.type === 'LIKE') {
-                likes.add(data.from); if(isHost) broadcast(data); updateStars();
-            } else if(data.type === 'FINISH') {
-                if(isHost) { turnIdx = (turnIdx + 1) % players.length; sync(); }
-                closeFocus();
-            } else if(data.type === 'VOICE_STATE') {
-                const p = players.find(x => x.id === data.from);
-                if(p) { p.isSpeaking = data.state; renderPlayers(); }
-                if(isHost) broadcast(data);
-            } else if(data.type === 'CHAT') {
-                appendChat(data.nick, data.msg); if(isHost) broadcast(data);
+                likes.add(data.from); if(isHost) sync(); updateStars();
+            } else if(data.type === 'FINISH_ALL') {
+                isShowing = false; closeFocus();
             } else if(data.type === 'TRANS_REQ') {
                 if(isHost) {
                     const sIdx = players.findIndex(p => p.id === data.from);
@@ -193,89 +172,36 @@
                     sync(data.targetId);
                     appendChat("SYSTEM", `${data.nick} 转移了回合给 ${players[turnIdx].nick}`, true);
                 }
+            } else if(data.type === 'CHAT') {
+                appendChat(data.nick, data.msg); if(isHost) broadcast(data);
+            } else if(data.type === 'VOICE_STATE') {
+                const p = players.find(x => x.id === data.from);
+                if(p) { p.isSpeaking = data.state; renderPlayers(); }
+                if(isHost) broadcast(data);
             }
         });
     }
 
-    function triggerAlert() {
-        const d = document.getElementById('alert-layer'); d.style.display = 'flex';
-        setTimeout(() => d.style.display = 'none', 2500);
-    }
-
-    function renderPlayers() {
-        document.getElementById('player-count').innerText = "在线: " + players.length;
-        document.getElementById('p-bar').innerHTML = players.map((p, i) => `
-            <div class="p-avatar ${i === turnIdx ? 'active' : ''} ${p.isSpeaking ? 'speaking' : ''}">
-                <div class="emoji">${p.avatar}</div>
-                <div class="name">${p.nick}</div>
-            </div>
-        `).join('');
-    }
-
-    function sync(alertTarget = null) {
-        broadcast({type:'SYNC', players, flipped:Array.from(flipped), turnIdx, alertId: alertTarget});
+    function sync(alertId = null) {
+        if(!isHost) return;
+        broadcast({type:'SYNC', players, flipped:Array.from(flipped), turnIdx, isShowing, alertId: alertId});
         renderPlayers(); renderDeck(); updateTurnStatus();
     }
 
-    function toggleMic() {
-        if(!localStream) return;
-        isMuted = !isMuted;
-        localStream.getAudioTracks()[0].enabled = !isMuted;
-        document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开";
-        document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active";
-        broadcast({type:'VOICE_STATE', from:peer.id, state:!isMuted});
-        const me = players.find(p => p.id === peer.id); if(me) { me.isSpeaking = !isMuted; renderPlayers(); }
+    function confirmEnd() {
+        if(isHost) { 
+            turnIdx = (turnIdx + 1) % players.length; 
+            isShowing = false;
+            broadcast({type:'FINISH_ALL'}); // 关键指令：全员强制关闭卡片
+            sync(); 
+        } else { conns.forEach(c => c.send({type:'FINISH'})); }
+        closeFocus();
     }
 
-    function handleLike() {
-        if(likes.has(peer.id)) return;
-        likes.add(peer.id); updateStars();
-        const d = {type:'LIKE', from: peer.id};
-        if(isHost) broadcast(d); else conns.forEach(c => c.send(d));
-        document.getElementById('like-btn').disabled = true;
-    }
-
-    function updateStars() {
-        const box = document.getElementById('star-box'); box.innerHTML = "";
-        const target = Math.max(players.length - 1, 0);
-        if(target === 0) { box.innerHTML = "★"; unlock(true); return; }
-        let count = 0; players.forEach(p => { if(p.id !== players[turnIdx].id && likes.has(p.id)) count++; });
-        for(let j=0; j<target; j++) {
-            const s = document.createElement('span'); s.className = "star" + (j < count ? " on" : ""); s.innerText = "★"; box.appendChild(s);
-        }
-        unlock(count >= target);
-    }
-
-    function unlock(ok) {
-        const b = document.getElementById('f-btn');
-        if(players[turnIdx].id === peer.id) {
-            b.disabled = !ok; b.innerText = ok ? "结束发言" : "等待点赞";
-            if(ok) document.getElementById('f-card').classList.add('unlocked');
-            else document.getElementById('f-card').classList.remove('unlocked');
-        } else { b.disabled = true; b.innerText = "正在发言"; }
-    }
-
-    function openTrans() {
-        const list = document.getElementById('trans-targets');
-        list.innerHTML = players.filter(p => p.id !== peer.id).map(p => `
-            <button class="p-btn" onclick="sendTrans('${p.id}')">给: ${p.nick}</button>
-        `).join('');
-        document.getElementById('trans-modal').style.display = 'flex';
-    }
-
-    function sendTrans(tid) {
-        const data = {type:'TRANS_REQ', from: peer.id, targetId: tid, nick: myNick};
-        if(isHost) {
-            players[turnIdx].canTrans = false; turnIdx = players.findIndex(p => p.id === tid); sync(tid);
-        } else { conns.forEach(c => c.send(data)); }
-        closeTrans();
-    }
-
-    function draw(i) {
-        if(players[turnIdx].id !== peer.id || document.getElementById('focused-overlay').style.display === 'flex') return;
-        flipped.add(i); openFocus(i);
-        const d = {type:'DRAW', index: i};
-        if(isHost) { broadcast(d); sync(); } else { conns.forEach(c => c.send(d)); }
+    function closeFocus() { 
+        document.getElementById('focused-overlay').style.display = 'none'; 
+        isShowing = false;
+        updateTurnStatus(); 
     }
 
     function openFocus(i) {
@@ -284,15 +210,64 @@
         likes.clear(); updateTurnStatus(); updateStars();
     }
 
-    function closeTrans() { document.getElementById('trans-modal').style.display = 'none'; }
-    function confirmEnd() { const d = {type:'FINISH'}; if(isHost) { turnIdx = (turnIdx + 1) % players.length; sync(); closeFocus(); } else { conns.forEach(c => c.send(d)); } }
-    function closeFocus() { document.getElementById('focused-overlay').style.display = 'none'; updateTurnStatus(); }
-    function updateTurnStatus() { const isMyTurn = (players[turnIdx]?.id === peer.id); const isShowing = (document.getElementById('focused-overlay').style.display === 'flex'); document.getElementById('trans-btn').disabled = !isMyTurn || !players[turnIdx]?.canTrans; document.getElementById('like-btn').disabled = isMyTurn || !isShowing; }
+    function draw(i) {
+        if(players[turnIdx].id !== peer.id || isShowing) return;
+        isShowing = true; flipped.add(i); openFocus(i);
+        const d = {type:'DRAW', index: i};
+        if(isHost) { broadcast(d); sync(); } else { conns.forEach(c => c.send(d)); }
+    }
+
+    // --- 其他基础功能保持 V20 逻辑但增强了同步 ---
     function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
+    function renderPlayers() {
+        document.getElementById('player-count').innerText = "ONLINE: " + players.length;
+        document.getElementById('p-bar').innerHTML = players.map((p, i) => `
+            <div class="p-avatar ${i === turnIdx ? 'active' : ''} ${p.isSpeaking ? 'speaking' : ''}">
+                <div class="mic-icon">🎤</div><div class="emoji">${p.avatar}</div><div class="name">${p.nick}</div>
+            </div>
+        `).join('');
+    }
+    function updateTurnStatus() {
+        const isMyTurn = (players[turnIdx]?.id === peer.id);
+        document.getElementById('trans-btn').disabled = !isMyTurn || !players[turnIdx]?.canTrans;
+        document.getElementById('like-btn').disabled = isMyTurn || !isShowing;
+    }
+    function handleLike() {
+        if(likes.has(peer.id)) return; likes.add(peer.id); updateStars();
+        const d = {type:'LIKE', from: peer.id};
+        if(isHost) sync(); else conns.forEach(c => c.send(d));
+        document.getElementById('like-btn').disabled = true;
+    }
+    function updateStars() {
+        const box = document.getElementById('star-box'); box.innerHTML = "";
+        const others = Math.max(players.length - 1, 0);
+        if(others === 0) { box.innerHTML = "★"; unlock(true); return; }
+        let count = 0; players.forEach(p => { if(p.id !== players[turnIdx].id && likes.has(p.id)) count++; });
+        for(let j=0; j<others; j++) {
+            const s = document.createElement('span'); s.className = "star" + (j < count ? " on" : ""); s.innerText = "★"; box.appendChild(s);
+        }
+        unlock(count >= others);
+    }
+    function unlock(ok) {
+        const b = document.getElementById('f-btn');
+        if(players[turnIdx].id === peer.id) {
+            b.disabled = !ok; b.innerText = ok ? "CONFIRM" : "WAITING";
+            if(ok) document.getElementById('f-card').classList.add('unlocked');
+        } else { b.disabled = true; b.innerText = "SPEAKING"; }
+    }
+    function openTrans() {
+        const list = document.getElementById('trans-targets');
+        list.innerHTML = players.filter(p => p.id !== peer.id).map(p => `<button class="p-btn" onclick="sendTrans('${p.id}')">TO: ${p.nick}</button>`).join('');
+        document.getElementById('trans-modal').style.display = 'flex';
+    }
+    function sendTrans(tid) { if(isHost) { players[turnIdx].canTrans = false; turnIdx = players.findIndex(p => p.id === tid); sync(tid); } else { conns.forEach(c => c.send({type:'TRANS_REQ', from:peer.id, targetId:tid, nick:myNick})); } closeTrans(); }
+    function closeTrans() { document.getElementById('trans-modal').style.display = 'none'; }
+    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开"; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; broadcast({type:'VOICE_STATE', from:peer.id, state:!isMuted}); const me = players.find(p => p.id === peer.id); if(me) { me.isSpeaking = !isMuted; renderPlayers(); } }
     function renderDeck() { const d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { const c = document.createElement('div'); c.className = "card" + (flipped.has(i) ? " flipped" : ""); c.onclick = () => draw(i); d.appendChild(c); } }
     function sendChat() { const i = document.getElementById('c-in'); if(!i.value) return; appendChat(myNick, i.value); const d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; }
-    function appendChat(n, m, alert=false) { const b = document.getElementById('c-msgs'); const d = document.createElement('div'); d.style.marginBottom = "5px"; if(alert) { d.style.color = "var(--pink)"; d.innerHTML = `[${n}] ${m}`; } else { d.innerHTML = `<span style="color:var(--gold)">${n}:</span> ${m}`; } b.appendChild(d); b.scrollTop = b.scrollHeight; }
+    function appendChat(n, m, alert=false) { const b = document.getElementById('c-msgs'); const d = document.createElement('div'); if(alert) { d.style.color = "var(--pink)"; d.innerHTML = `[${n}] ${m}`; } else { d.innerHTML = `<span style="color:var(--gold)">${n}:</span> ${m}`; } b.appendChild(d); b.scrollTop = b.scrollHeight; }
     function handleVoiceStream(call) { call.on('stream', stream => { const audio = document.createElement('audio'); audio.srcObject = stream; audio.autoplay = true; document.getElementById('audio-container').appendChild(audio); }); }
+    function triggerAlert() { const d = document.getElementById('alert-layer'); d.style.display = 'flex'; setTimeout(() => d.style.display = 'none', 2500); }
 </script>
 </body>
 </html>
