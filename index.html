@@ -3,68 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PIXEL SOUL V23</title>
+    <title>PIXEL SOUL: BALATRO EDITION</title>
     <script src="https://lib.baomitu.com/peerjs/1.5.2/peerjs.min.js"></script>
     <style>
-        :root { --bg: #0d0221; --pink: #ff5555; --blue: #55ffff; --gold: #ffff55; --grey: #333; --dark: #1a1a2e; --green: #00ff66; }
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+        :root { --bg: #1e0d2d; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --dark: #000000; --card-bg: #3d1c52; }
+        
         * { image-rendering: pixelated; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
-            background: var(--bg); color: #fff; font-family: "Courier New", monospace;
+            background: var(--bg); color: #fff; font-family: 'DotGothic16', 'Courier New', monospace;
             margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
-            background-size: 100% 4px, 4px 100%;
+            /* CRT 扫描线效果 */
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%;
         }
-        .status-bar { height: 28px; background: #000; border-bottom: 1px solid var(--blue); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.6rem; flex-shrink: 0; }
-        .copy-btn { background: var(--blue); color: #000; border: none; padding: 1px 4px; cursor: pointer; margin-left: 5px; font-size: 0.5rem; font-weight: bold; }
 
-        .player-bar { height: 75px; border-bottom: 2px solid var(--blue); display: flex; align-items: center; padding: 0 10px; gap: 12px; overflow-x: auto; background: rgba(0,0,0,0.8); flex-shrink: 0; }
-        .p-avatar { width: 42px; height: 42px; border: 2px solid var(--grey); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; background: #111; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); animation: pulse 1s infinite; }
-        .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -10px; right: -10px; font-size: 0.7rem; }
-        .p-avatar .name { position: absolute; bottom: -16px; font-size: 0.5rem; color: #888; width: 50px; text-align: center; white-space: nowrap; overflow: hidden; }
+        /* 顶部状态栏 */
+        .status-bar { height: 30px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--pink); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; font-size: 0.7rem; color: var(--gold); letter-spacing: 1px; }
 
-        .main-deck { flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; overflow-y: auto; align-content: start; }
-        .card { aspect-ratio: 2/3; background: var(--dark); border: 2px solid var(--blue); cursor: pointer; }
-        .card.flipped { opacity: 0.15; filter: grayscale(1); border-color: #444; pointer-events: none; }
+        /* 玩家头像栏 */
+        .player-bar { height: 80px; padding: 10px; display: flex; gap: 15px; overflow-x: auto; background: rgba(0,0,0,0.5); align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .p-avatar { width: 45px; height: 45px; border: 3px solid #555; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: var(--dark); flex-shrink: 0; }
+        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); animation: activePulse 1.5s infinite; transform: scale(1.1); }
+        .p-avatar .emoji { font-size: 1.5rem; }
+        .p-avatar .name { position: absolute; bottom: -18px; font-size: 0.55rem; color: #aaa; text-align: center; width: 60px; white-space: nowrap; overflow: hidden; }
+        .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -10px; right: -10px; font-size: 0.8rem; animation: bounce 0.5s infinite; }
 
-        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; pointer-events: none; }
-        .focused-card { width: 90%; max-width: 340px; min-height: 400px; background: #2b0b3d; border: 6px solid var(--grey); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; }
-        .focused-card.unlocked { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
+        /* 卡牌区 */
+        .main-deck { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; perspective: 1000px; }
+        
+        .card { 
+            aspect-ratio: 2/3; background: var(--card-bg); border-radius: 12px; border: 3px solid #ffffff22;
+            cursor: pointer; position: relative; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.5);
+            /* 卡牌背纹 */
+            background-image: radial-gradient(circle, #5e2a7e 1px, transparent 1px);
+            background-size: 10px 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card::before { content: "?"; font-size: 2.5rem; color: rgba(255,255,255,0.1); font-weight: bold; }
+        .card:hover { transform: translateY(-5px) rotate(2deg); border-color: var(--blue); }
+        .card.flipped { opacity: 0.1; filter: grayscale(1); transform: scale(0.9); pointer-events: none; }
 
-        .chat-panel { height: 110px; border-top: 4px solid var(--pink); background: rgba(0,0,0,0.95); display: flex; flex-direction: column; z-index: 1000; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.75rem; color: #ccc; }
-        .bottom-console { height: 75px; border-top: 4px solid var(--blue); background: #000; display: flex; padding: 10px; gap: 8px; z-index: 1000; }
+        /* 弹出层 */
+        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; pointer-events: none; }
+        .focused-card { 
+            width: 85%; max-width: 340px; min-height: 420px; background: #fff; color: #000;
+            border-radius: 20px; border: 8px solid #000; padding: 30px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            text-align: center; pointer-events: auto; transform: rotate(-1deg);
+            background-image: repeating-linear-gradient(45deg, #f8f8f8 0, #f8f8f8 2px, transparent 0, transparent 50%);
+            background-size: 10px 10px;
+        }
+        .focused-card.unlocked { box-shadow: 0 0 50px var(--gold); border-color: var(--gold); }
+        #q-text { font-size: 1.2rem; font-weight: 900; line-height: 1.4; color: #1e0d2d; }
 
-        .p-btn { background: #000; color: var(--blue); border: 4px solid var(--blue); cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 4px 4px 0 #000; display: flex; align-items: center; justify-content: center; flex: 1; }
-        .p-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+        /* 底部控制面板 */
+        .chat-panel { height: 100px; background: rgba(0,0,0,0.9); border-top: 3px solid var(--pink); display: flex; flex-direction: column; z-index: 1000; }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.75rem; color: #00f2ff; }
+        .bottom-console { height: 80px; background: #000; border-top: 2px solid var(--blue); display: flex; padding: 12px; gap: 10px; z-index: 1000; }
+
+        /* 按钮设计 */
+        .p-btn { 
+            background: #111; color: var(--blue); border: 3px solid var(--blue); border-radius: 8px;
+            cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.8rem;
+            box-shadow: 4px 4px 0px #000; transition: 0.1s; display: flex; align-items: center; justify-content: center; flex: 1;
+        }
+        .p-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px #000; }
         .p-btn.gold { color: var(--gold); border-color: var(--gold); }
-        .p-btn:disabled { opacity: 0.3; color: #444; border-color: #444; }
+        .p-btn.pink { color: var(--pink); border-color: var(--pink); }
+        .p-btn:disabled { opacity: 0.2; filter: grayscale(1); }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } }
-        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 8000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
-        #v-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        @keyframes activePulse { 0%, 100% { box-shadow: 0 0 10px var(--gold); } 50% { box-shadow: 0 0 25px var(--gold); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+        #v-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="setup">
-    <h1 style="color:var(--pink); font-size: 2.2rem; text-shadow: 6px 6px 0 #000; margin-bottom: 20px;">PIXEL SOUL</h1>
-    <input type="text" id="nick-in" placeholder="你的昵称..." style="padding:12px; border:4px solid var(--blue); background:#000; color:#fff; width:100%; max-width:280px; margin-bottom:15px; font-family: inherit;">
-    <div style="display: flex; gap: 10px;">
-        <button class="p-btn" onclick="startApp(true)">创 房</button>
-        <button class="p-btn" onclick="startApp(false)">加 入</button>
+    <h1 style="color:var(--pink); font-size: 3rem; text-shadow: 8px 8px 0 #000; margin-bottom: 40px; letter-spacing: 4px;">PIXEL SOUL</h1>
+    <input type="text" id="nick-in" placeholder="PLAYER NAME..." style="padding:15px; border:4px solid var(--blue); background:#000; color:#fff; width:280px; margin-bottom:20px; font-family: inherit; text-align: center;">
+    <div style="display: flex; gap: 15px;">
+        <button class="p-btn pink" style="padding:15px 30px" onclick="startApp(true)">创 建 房 间</button>
+        <button class="p-btn" style="padding:15px 30px" onclick="startApp(false)">加 入 房 间</button>
     </div>
-    <input type="text" id="id-in" placeholder="粘贴房号..." style="padding:10px; border:4px solid #444; background:#000; color:#fff; width:260px; margin-top:10px;">
+    <input type="text" id="id-in" placeholder="ROOM ID..." style="padding:10px; border:2px solid #444; background:#000; color:#fff; width:280px; margin-top:15px; text-align: center;">
 </div>
 
 <div id="v-gate">
-    <h2 style="color:var(--gold)">信号塔已连接</h2>
-    <p style="font-size:0.75rem; color:#888; margin-bottom:30px;">点击开启同步系统</p>
-    <button class="p-btn" style="padding:20px 40px; font-size:1.2rem; color:var(--gold); border-color:var(--gold);" onclick="activateVoice()">进入灵魂对讲</button>
+    <h2 style="color:var(--gold); font-size: 2rem;">信号已同步</h2>
+    <p style="color:#888; margin-bottom:40px;">点击进入对讲频道</p>
+    <button class="p-btn gold" style="max-width:240px; padding:20px;" onclick="activateVoice()">启 动 灵魂对讲</button>
 </div>
 
 <div class="status-bar">
-    <span>ROOM ID: <b id="room-text">----</b> <button class="copy-btn" onclick="copyID()">复制</button></span>
+    <span>ROOM: <b id="room-text">----</b></span>
     <span id="player-count">ONLINE: 1</span>
 </div>
 
@@ -73,46 +110,56 @@
 
 <div id="focused-overlay">
     <div class="focused-card" id="f-card">
-        <div id="q-text" style="font-size:1.1rem; font-weight:bold; line-height:1.4;"></div>
-        <div id="star-box" style="display:flex; gap:10px; font-size:1.8rem; color:var(--grey);"></div>
-        <button id="f-btn" class="p-btn gold" style="width:100%; padding:15px;" disabled onclick="confirmEnd()">等待点赞</button>
+        <div style="color:#ff0055; font-weight: 900; letter-spacing: 2px;">[ 灵魂档案 ]</div>
+        <div id="q-text"></div>
+        <div id="star-box" style="display:flex; gap:10px; font-size:2rem; color:#ddd;"></div>
+        <button id="f-btn" class="p-btn gold" style="width:100%; height:60px; font-size:1.2rem;" disabled onclick="confirmEnd()">等待点赞</button>
     </div>
 </div>
 
 <div class="chat-panel">
     <div id="c-msgs"></div>
-    <div style="padding:5px; border-top:1px solid #333;"><input type="text" id="c-in" placeholder="聊天/吐槽..." style="width:100%; background:#000; border:2px solid var(--pink); color:#fff; padding:5px; font-family:inherit;" onkeypress="if(event.keyCode==13) sendChat()"></div>
+    <div style="padding:8px; border-top:1px solid #333;"><input type="text" id="c-in" placeholder="在此吐槽..." style="width:100%; background:#000; border:2px solid var(--blue); color:var(--blue); padding:8px; font-family:inherit;" onkeypress="if(event.keyCode==13) sendChat()"></div>
 </div>
 
 <div class="bottom-console">
     <button id="mic-btn" class="p-btn" style="border-color:var(--green); color:var(--green);" onclick="toggleMic()" disabled>麦克风:关</button>
-    <button id="like-btn" class="p-btn gold" style="flex:1.5;" onclick="handleLike()" disabled>点赞 (LIKE!)</button>
-    <button id="trans-btn" class="p-btn" style="color:var(--pink); border-color:var(--pink);" onclick="openTrans()" disabled>转移卡</button>
+    <button id="like-btn" class="p-btn gold" style="flex:1.8; font-size: 1.1rem;" onclick="handleLike()" disabled>赞 (LIKE)</button>
+    <button id="trans-btn" class="p-btn pink" onclick="openTrans()" disabled>转移卡</button>
 </div>
 
 <div id="audio-container" style="display:none;"></div>
-<div id="trans-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:#1a1a2e; border:4px solid var(--pink); padding:20px; width:100%; max-width:300px; text-align:center;">
-        <p style="color:var(--pink); margin-bottom:20px;">转移给谁？</p>
-        <div id="trans-targets" style="display:flex; flex-direction:column; gap:10px;"></div>
-        <button class="p-btn" style="margin-top:20px; width:100%" onclick="closeTrans()">取消</button>
+<div id="trans-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#2b0b3d; border:4px solid var(--pink); border-radius:15px; padding:30px; width:100%; max-width:300px; text-align:center;">
+        <p style="color:var(--pink); font-size:1.2rem; margin-bottom:20px; font-weight: bold;">你要转移给谁？</p>
+        <div id="trans-targets" style="display:flex; flex-direction:column; gap:12px;"></div>
+        <button class="p-btn" style="margin-top:25px; width:100%; border-color:#888; color:#888;" onclick="closeTrans()">取消</button>
     </div>
 </div>
 
 <script>
-    const questions = ["1、找一位玩家问ta“你觉得我是一个什么样的人？”", "2、描述一个你因为嫉妒，而故意在背后说某人坏话的瞬间。", "3、如果这几个人里必须断绝一段关系，你会最先放弃谁？", "4、回忆一个你对我感到最失望，觉得“这辈子也就这样了”的瞬间。", "5、你灵魂里最“贪婪”的部分，放出来它会做出什么事？", "6、如果你明天陷入绝境，谁会是你的“避难所”？", "7、问一位玩家“说出一个我完全没意识到的性格死穴”。", "8、谁的离去，会让你觉得这个圈子彻底失去了意义？", "9、问一位玩家“你曾为了面子，吞下了哪句想爆粗的真心话？”", "10、如果生命交换24小时，你最想体验谁的那段人生？", "11、如果时间重来，你最想改变的一件事是什么？", "12、分享你最绝望的瞬间。", "13、找一位玩家问“撇开职业光环，你觉得我们可以成为好朋友吗？”", "14、1000万的彩票必须送出去，你会送给在座的谁？", "15、谁是你曾经最看不起、但现在由衷佩服的人？", "16、如果你明天就要消失，最想坦白的一个负面真相是什么？", "17、找一位玩家问“你觉得我性格里的哪部分你一直看不惯？”", "18、描述一个你觉得你最“孤独”的时刻。", "19、合伙干一件“违背常规”的坏事，你会选谁当搭档？", "20、你觉得我们这段关系的“保质期”取决于什么？", "21、谁的哪句评价，曾让你在深夜反复咀嚼、背脊发凉？", "22、你想偷走谁的哪种天赋，哪怕让他从此平庸？", "23、找一位玩家问“说出一个你一直没敢向我确认的负面传闻”。", "24、如果交情有“重启键”，你最想回到哪个时间点？", "25、你曾在哪一瞬间，觉得我极其自私且不顾你的感受？", "26、谁是这个圈子里最会演戏的伪装者？抓到过什么破绽？", "27、你这辈子最对不起的人是谁？为什么？", "28、谁最像是一个“能量黑洞”，让你接触后精疲力竭？", "29、如果我们被关进密室只能活一人，最后的幸存者是谁？", "30、你觉得我身上最“矫情”的地方在哪里？", "31、谁最让你感到“共振”？那种即便不语也能灵魂震荡的感应。", "32、描述一个你觉得我最面目可憎、冷冰冰的瞬间。", "33、如果现在就是终点，你在这个星球留下的最真实痕迹是什么？", "34、如果一起流亡，谁会是最先崩溃、甚至背叛大家的人？", "35、描述一次你感到极其强烈的“归属感”。", "36、如果你死后能保留一段记忆寻找某人，你会保留关于谁的什么？", "37、问在座一位“描述一个我身上最廉价的品质，哪怕我引以为傲”。", "38、谁是你最想深交但一直觉得“气场不合”的人？", "39、说出一个你删除的一条信息，为什么删除？", "40、圈子里谁是你眼中那个除了资源一无是处的蠢货？"];
-    const avatars = ["🃏", "🎭", "💀", "🕯️", "🌑", "🪐", "🍷", "⛓️"];
-    const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
+    const questions = ["找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？请给出你的理性逻辑。", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？为什么？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命可以交换，你最想体验在座哪位的哪一段人生？哪怕只有 24 小时。", "如果时间可以重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "找一位玩家问“撇开工作上的联系，你觉得我们可以成为好朋友吗？”", "如果你有一张1000万的彩票，必须送出去，你会选择送给在座的谁？", "在座的人里，谁是你曾经最看不起、但现在由衷佩服的人？发生了什么让你转念？", "如果你明天就要消失，你最想坦白的一个关于你自己的负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”的时刻。", "如果我们可以合伙干一件“违背常规但符合本心”的坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？你预感的终点在哪里？", "在座谁的哪句评价，曾让你在深夜里反复咀嚼、甚至感到背脊发凉？", "如果可以从在座某人身上“偷”走一种天赋，你最想偷谁的？即便这会让他从此沦为平庸。", "找一位玩家问“说出一个你一直没敢向我确认的、关于我的负面传闻或质疑。”", "找一位玩家问“如果给我们的交情设计一个“重启键”，你最想回到哪一个时间点？”", "你曾在哪一个瞬间，觉得我其实是一个极其自私、且完全不顾及你感受的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”的伪装者？你抓到过他什么破绽？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”，让你每次接触后都感到精疲力竭？", "如果我们这群人被关进密室，只能活一个人，你觉得最后活下来的那个“幸存者”会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？不是性格相近，而是那种即便不说话，你也觉得你们的灵魂是在同一个频率上震荡的玄妙感。", "描述一个你觉得我最“面目可憎”或最让你感到陌生、冰冷的瞬间。", "如果现在就是终点，你觉得你在这个星球上留下的最真实、最不可磨灭的“生命痕迹”是什么？", "如果我们要一起去流亡，你觉得谁会是那个最先崩溃、甚至会背叛大家的人？", "哪一次你感到极其强烈的“归属感”", "如果你可以选择在死后保留一段记忆，从而在下一世继续寻找某个人，你会保留关于谁的哪段记忆？", "问在座玩家一个问题“描述一个你觉得我身上最“廉价”品质，哪怕它曾被我引以为傲。”", "在座的人里，谁是你最想深交但一直觉得“气场不合”的人？", "说出一个你删除的一条信息，为什么删除？", "你现在的社交圈子里，谁是你眼中那个“除了有点钱/资源，其实一无是处”的蠢货？"];
+    const emojis = ["🃏", "🤡", "👹", "💀", "👁️", "🌙", "🧿", "🔥", "🔮"];
+    
+    // 跨国联机关键：多重高穿透性 STUN 节点
+    const iceCfg = { iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.anyfirewall.com:3478' },
+        { urls: 'stun:stun.stunprotocol.org' }
+    ]};
 
     let peer, conns = [], myNick = "", myAvatar = "", isHost = false, players = [], flipped = new Set(), likes = new Set(), turnIdx = 0, isShowing = false, localStream = null, isMuted = true;
 
     function startApp(host) {
         myNick = document.getElementById('nick-in').value || "ANON";
-        myAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+        myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
         isHost = host;
         document.getElementById('setup').style.display = 'none';
         document.getElementById('v-gate').style.display = 'flex';
         renderDeck();
+        
         peer = new Peer({ config: iceCfg, secure: true });
         peer.on('open', id => {
             document.getElementById('room-text').innerText = id;
@@ -129,10 +176,8 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             localStream.getAudioTracks()[0].enabled = false;
             document.getElementById('mic-btn').disabled = false;
-        } catch (e) { appendChat("SYSTEM", "麦克风未授权"); }
+        } catch (e) { console.log("Mic error"); }
     }
-
-    function connect(rid) { const c = peer.connect(rid, { reliable: true }); setupConn(c); }
 
     function setupConn(c) {
         c.on('open', () => {
@@ -140,10 +185,6 @@
             c.send({type:'JOIN', nick: myNick, avatar: myAvatar});
             if(localStream) peer.call(c.peer, localStream);
         });
-        // 关键改进：监听连接断开
-        c.on('close', () => removePlayer(c.peer));
-        c.on('error', () => removePlayer(c.peer));
-
         c.on('data', data => {
             if(data.type === 'JOIN') {
                 if(!players.find(p => p.id === c.peer)) {
@@ -159,16 +200,15 @@
                 isShowing = true; openFocus(data.index);
             } else if(data.type === 'LIKE') {
                 likes.add(data.from); if(isHost) sync(); updateStars();
-            } else if(data.type === 'FINISH') {
-                if(isHost) { turnIdx = (turnIdx + 1) % players.length; isShowing = false; sync(); }
-                closeFocus();
+            } else if(data.type === 'FINISH_ALL') {
+                isShowing = false; closeFocus();
             } else if(data.type === 'TRANS_REQ') {
                 if(isHost) {
                     const sIdx = players.findIndex(p => p.id === data.from);
-                    if(sIdx !== -1) players[sIdx].canTrans = false;
+                    players[sIdx].canTrans = false;
                     turnIdx = players.findIndex(p => p.id === data.targetId);
                     sync();
-                    appendChat("SYSTEM", `${data.nick} 转移了回合`, true);
+                    appendChat("SYSTEM", `${data.nick} 转移了回合给 ${players[turnIdx].nick}`, true);
                 }
             } else if(data.type === 'CHAT') {
                 appendChat(data.nick, data.msg); if(isHost) broadcast(data);
@@ -180,101 +220,38 @@
         });
     }
 
-    // 核心函数：移除玩家并重置逻辑
-    function removePlayer(pid) {
-        const idx = players.findIndex(p => p.id === pid);
-        if (idx === -1) return;
-        
-        appendChat("SYSTEM", `${players[idx].nick} 离开了游戏`, true);
-        const wasTurn = (turnIdx === idx);
-        players.splice(idx, 1);
-        conns = conns.filter(c => c.peer !== pid);
-
-        if (isHost) {
-            if (players.length === 0) { turnIdx = 0; } 
-            else {
-                // 如果当前说话的人走了，重置卡片状态
-                if (wasTurn) { isShowing = false; turnIdx = turnIdx % players.length; } 
-                else if (turnIdx > idx) { turnIdx--; }
-            }
-            sync();
-            updateStars(); // 重新计算点赞星星
-        }
-    }
-
     function sync() {
         if(!isHost) return;
         broadcast({type:'SYNC', players, flipped:Array.from(flipped), turnIdx, isShowing});
         renderPlayers(); renderDeck(); updateTurnStatus();
     }
-    function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
-    function renderPlayers() {
-        document.getElementById('player-count').innerText = "ONLINE: " + players.length;
-        document.getElementById('p-bar').innerHTML = players.map((p, i) => `
-            <div class="p-avatar ${i === turnIdx ? 'active' : ''} ${p.isSpeaking ? 'speaking' : ''}">
-                <div class="mic-icon">🎤</div><div class="emoji">${p.avatar}</div><div class="name">${p.nick}</div>
-            </div>
-        `).join('');
-    }
-    function updateTurnStatus() {
-        const isMyTurn = (players[turnIdx]?.id === peer.id);
-        document.getElementById('trans-btn').disabled = !isMyTurn || !players[turnIdx]?.canTrans;
-        document.getElementById('like-btn').disabled = isMyTurn || !isShowing;
-    }
-    function draw(i) {
-        if(players[turnIdx]?.id !== peer.id || isShowing) return;
-        isShowing = true; flipped.add(i); openFocus(i);
-        const d = {type:'DRAW', index: i};
-        if(isHost) { broadcast(d); sync(); } else { conns.forEach(c => c.send(d)); }
-    }
-    function openFocus(i) {
-        document.getElementById('q-text').innerText = questions[i];
-        document.getElementById('focused-overlay').style.display = 'flex';
-        likes.clear(); updateTurnStatus(); updateStars();
-    }
-    function handleLike() {
-        if(likes.has(peer.id)) return; likes.add(peer.id); updateStars();
-        const d = {type:'LIKE', from: peer.id};
-        if(isHost) sync(); else conns.forEach(c => c.send(d));
-        document.getElementById('like-btn').disabled = true;
-    }
-    function updateStars() {
-        const box = document.getElementById('star-box'); box.innerHTML = "";
-        const others = Math.max(players.length - 1, 0);
-        if(others === 0) { box.innerHTML = "★"; unlock(true); return; }
-        let count = 0; players.forEach(p => { if(p.id !== players[turnIdx]?.id && likes.has(p.id)) count++; });
-        for(let j=0; j<others; j++) {
-            const s = document.createElement('span'); s.className = "star" + (j < count ? " on" : ""); s.innerText = "★"; box.appendChild(s);
-        }
-        unlock(count >= others);
-    }
-    function unlock(ok) {
-        const b = document.getElementById('f-btn');
-        if(players[turnIdx]?.id === peer.id) {
-            b.disabled = !ok; b.innerText = ok ? "CONFIRM" : "WAITING";
-            if(ok) document.getElementById('f-card').classList.add('unlocked');
-            else document.getElementById('f-card').classList.remove('unlocked');
-        } else { b.disabled = true; b.innerText = "SPEAKING"; }
-    }
+
     function confirmEnd() {
-        if(isHost) { turnIdx = (turnIdx + 1) % players.length; isShowing = false; sync(); } 
-        else { conns.forEach(c => c.send({type:'FINISH'})); }
+        if(isHost) { 
+            turnIdx = (turnIdx + 1) % players.length; isShowing = false;
+            broadcast({type:'FINISH_ALL'}); sync(); 
+        } else { conns.forEach(c => c.send({type:'FINISH'})); }
         closeFocus();
     }
+
     function closeFocus() { document.getElementById('focused-overlay').style.display = 'none'; isShowing = false; updateTurnStatus(); }
-    function openTrans() {
-        const list = document.getElementById('trans-targets');
-        list.innerHTML = players.filter(p => p.id !== peer.id).map(p => `<button class="p-btn" onclick="sendTrans('${p.id}')">TO: ${p.nick}</button>`).join('');
-        document.getElementById('trans-modal').style.display = 'flex';
-    }
-    function sendTrans(tid) { if(isHost) { const sIdx = players.findIndex(p => p.id === peer.id); players[sIdx].canTrans = false; turnIdx = players.findIndex(p => p.id === tid); sync(); } else { conns.forEach(c => c.send({type:'TRANS_REQ', from:peer.id, targetId:tid, nick:myNick})); } closeTrans(); }
+    function openFocus(i) { document.getElementById('q-text').innerText = questions[i]; document.getElementById('focused-overlay').style.display = 'flex'; likes.clear(); updateTurnStatus(); updateStars(); }
+    function draw(i) { if(players[turnIdx].id !== peer.id || isShowing) return; isShowing = true; flipped.add(i); openFocus(i); const d = {type:'DRAW', index: i}; if(isHost) { broadcast(d); sync(); } else { conns.forEach(c => c.send(d)); } }
+    function renderPlayers() { document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-avatar ${i === turnIdx ? 'active' : ''} ${p.isSpeaking ? 'speaking' : ''}"><div class="emoji">${p.avatar}</div><div class="name">${p.nick}</div></div>`).join(''); }
+    function updateTurnStatus() { const isMyTurn = (players[turnIdx]?.id === peer.id); document.getElementById('trans-btn').disabled = !isMyTurn || !players[turnIdx]?.canTrans; document.getElementById('like-btn').disabled = isMyTurn || !isShowing; }
+    function handleLike() { if(likes.has(peer.id)) return; likes.add(peer.id); updateStars(); const d = {type:'LIKE', from: peer.id}; if(isHost) sync(); else conns.forEach(c => c.send(d)); document.getElementById('like-btn').disabled = true; }
+    function updateStars() { const box = document.getElementById('star-box'); box.innerHTML = ""; const others = Math.max(players.length - 1, 0); if(others === 0) { box.innerHTML = "★"; unlock(true); return; } let count = 0; players.forEach(p => { if(p.id !== players[turnIdx].id && likes.has(p.id)) count++; }); for(let j=0; j<others; j++) { const s = document.createElement('span'); s.className = "star" + (j < count ? " on" : ""); s.innerText = "★"; box.appendChild(s); } unlock(count >= others); }
+    function unlock(ok) { const b = document.getElementById('f-btn'); if(players[turnIdx].id === peer.id) { b.disabled = !ok; b.innerText = ok ? "确 认 结 束" : "等 待 点 赞"; if(ok) document.getElementById('f-card').classList.add('unlocked'); } else { b.disabled = true; b.innerText = "正在发言..."; } }
+    function openTrans() { const list = document.getElementById('trans-targets'); list.innerHTML = players.filter(p => p.id !== peer.id).map(p => `<button class="p-btn" onclick="sendTrans('${p.id}')">给: ${p.nick}</button>`).join(''); document.getElementById('trans-modal').style.display = 'flex'; }
+    function sendTrans(tid) { if(isHost) { players[turnIdx].canTrans = false; turnIdx = players.findIndex(p => p.id === tid); sync(); } else { conns.forEach(c => c.send({type:'TRANS_REQ', from:peer.id, targetId:tid, nick:myNick})); } closeTrans(); }
     function closeTrans() { document.getElementById('trans-modal').style.display = 'none'; }
-    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开"; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; broadcast({type:'VOICE_STATE', from:peer.id, state:!isMuted}); const me = players.find(p => p.id === peer.id); if(me) { me.isSpeaking = !isMuted; renderPlayers(); } }
+    function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
     function renderDeck() { const d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { const c = document.createElement('div'); c.className = "card" + (flipped.has(i) ? " flipped" : ""); c.onclick = () => draw(i); d.appendChild(c); } }
     function sendChat() { const i = document.getElementById('c-in'); if(!i.value) return; appendChat(myNick, i.value); const d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; }
     function appendChat(n, m, alert=false) { const b = document.getElementById('c-msgs'); const d = document.createElement('div'); if(alert) { d.style.color = "var(--pink)"; d.innerHTML = `[${n}] ${m}`; } else { d.innerHTML = `<span style="color:var(--gold)">${n}:</span> ${m}`; } b.appendChild(d); b.scrollTop = b.scrollHeight; }
     function handleVoiceStream(call) { call.on('stream', stream => { const audio = document.createElement('audio'); audio.srcObject = stream; audio.autoplay = true; document.getElementById('audio-container').appendChild(audio); }); }
-    function copyID() { const id = document.getElementById('room-text').innerText; navigator.clipboard.writeText(id); appendChat("SYSTEM", "房号已复制"); }
+    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开"; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; broadcast({type:'VOICE_STATE', from:peer.id, state:!isMuted}); const me = players.find(p => p.id === peer.id); if(me) { me.isSpeaking = !isMuted; renderPlayers(); } }
+    function connect(rid) { const c = peer.connect(rid, { reliable: true }); setupConn(c); }
 </script>
 </body>
 </html>
