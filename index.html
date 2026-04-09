@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PIXEL SOUL V31</title>
-    <script src="https://lib.baomitu.com/peerjs/1.5.2/peerjs.min.js"></script>
+    <title>PIXEL SOUL V32</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #1a0826; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; }
         * { image-rendering: pixelated; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -19,28 +19,26 @@
         .p-avatar { width: 40px; height: 40px; border: 3px solid #444; border-radius: 8px; position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #000; }
         .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); }
         .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -10px; right: -10px; font-size: 0.8rem; }
-        .p-avatar .name { position: absolute; bottom: -16px; font-size: 0.5rem; color: #777; width: 50px; text-align: center; }
+        .p-avatar .name { position: absolute; bottom: -16px; font-size: 0.5rem; color: #777; width: 50px; text-align: center; overflow: hidden; }
 
         .main-deck { flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; overflow-y: auto; align-content: start; z-index: 10; }
         .card { aspect-ratio: 2/3; background: #4d1b7b; border-radius: 10px; border: 3px solid rgba(255,255,255,0.2); cursor: pointer; position: relative; background-image: repeating-conic-gradient(#5e2a7e 0 25%, #4d1b7b 0 50%); background-size: 10px 10px; display: flex; align-items: center; justify-content: center; box-shadow: 3px 3px 0 #000; }
         .card::after { content: "?"; font-size: 1.8rem; color: rgba(255,255,255,0.1); font-weight: bold; }
         .card.flipped { opacity: 0.1; filter: grayscale(1); pointer-events: none; }
 
-        /* 灵魂档案弹出层：高度物理隔离 */
         #focused-overlay { position: fixed; top: 95px; left: 0; right: 0; height: 350px; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; pointer-events: none; }
         .focused-card { width: 85%; max-width: 290px; min-height: 300px; background: #fff; color: #1a1a2e; border-radius: 18px; border: 6px solid #1a1a2e; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; transform: rotate(-1deg); box-shadow: 10px 10px 0px rgba(0,0,0,0.6); }
 
-        /* 聊天与控制：最高优先级 10000 */
         .chat-panel { height: 110px; background: rgba(0,0,0,0.98); border-top: 3px solid var(--pink); display: flex; flex-direction: column; z-index: 10000; position: relative; }
         #c-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 0.75rem; color: var(--blue); }
         .bottom-console { height: 80px; background: #000; border-top: 2px solid var(--blue); display: flex; padding: 10px; gap: 8px; z-index: 10000; position: relative; }
 
         .p-btn { background: #111; color: var(--blue); border: 3px solid var(--blue); border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 0.7rem; box-shadow: 3px 3px 0px #000; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; }
-        .p-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0px 0px 0px #000; }
+        .p-btn:active:not(:disabled) { transform: translate(1px, 1px); box-shadow: 0px 0px 0px #000; }
         .p-btn.gold { color: var(--gold); border-color: var(--gold); }
         .p-btn.pink { color: var(--pink); border-color: var(--pink); }
         .p-btn.active { background: var(--green); color: #000; border-color: #fff; }
-        .p-btn:disabled { opacity: 0.15; }
+        .p-btn:disabled { opacity: 0.15; cursor: not-allowed; }
 
         #setup { position: fixed; inset: 0; background: var(--bg); z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
         #v-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 21000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -51,13 +49,16 @@
 <div id="setup">
     <h1 style="color:var(--pink); font-size: 2.2rem; text-shadow: 5px 5px 0 #000;">PIXEL SOUL</h1>
     <input type="text" id="nick-in" placeholder="NICKNAME..." style="padding:12px; border:4px solid var(--blue); background:#000; color:#fff; width:250px; margin-bottom:15px; font-family: inherit; text-align: center;">
-    <div style="display: flex; gap: 10px;"><button class="p-btn pink" style="padding:15px" onclick="startApp(true)">创 建</button><button class="p-btn" style="padding:15px" onclick="startApp(false)">加 入</button></div>
+    <div style="display: flex; gap: 10px;">
+        <button id="host-btn" class="p-btn pink" style="padding:15px" onclick="startApp(true)">创 建</button>
+        <button id="join-btn" class="p-btn" style="padding:15px" onclick="startApp(false)">加 入</button>
+    </div>
     <input type="text" id="id-in" placeholder="ROOM ID..." style="padding:10px; border:2px solid #444; background:#000; color:#fff; width:230px; margin-top:15px; text-align: center;">
 </div>
 
 <div id="v-gate">
-    <h2 style="color:var(--gold); font-size: 1.5rem;">全员语音网格已就绪</h2>
-    <p style="color:#888; margin-bottom:30px; font-size: 0.75rem;">[ 移动端请务必点击下方按钮 ]</p>
+    <h2 style="color:var(--gold); font-size: 1.5rem;">信号网路就绪</h2>
+    <p style="color:#888; margin-bottom:30px; font-size: 0.75rem;">[ 移动端请务必点击激活 ]</p>
     <button class="p-btn gold" style="max-width:220px; padding:20px; font-size:1rem;" onclick="activateVoice()">进入灵魂对讲</button>
 </div>
 
@@ -93,14 +94,14 @@
 
 <div id="trans-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:20000; flex-direction:column; align-items:center; justify-content:center;">
     <div style="background:#2b0b3d; border:4px solid var(--pink); border-radius:12px; padding:25px; width:260px; text-align:center;">
-        <p style="color:var(--pink); font-weight: bold; margin-bottom: 15px;">你要转移给谁？</p>
+        <p style="color:var(--pink); font-weight: bold; margin-bottom: 15px;">转移给谁？</p>
         <div id="trans-targets" style="display:flex; flex-direction:column; gap:10px;"></div>
         <button class="p-btn" style="margin-top:15px; width:100%; border-color:#666; color:#666;" onclick="closeTrans()">取消</button>
     </div>
 </div>
 
 <script>
-    const questions = ["找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？请给出你的理性逻辑。", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？为什么？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？哪怕只有 24 小时。", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "找一位玩家问“撇开工作上的联系，你觉得我们可以成为好朋友吗？”", "如果你有一张1000万的彩票，必须送出去，你会选择送给在座的谁？", "在座的人里，谁是你曾经最看不起、但现在由衷佩服的人？发生了什么让你转念？", "如果你明天就要消失，你最想坦白的一个负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们可以合伙干一件“违背常规但符合本心”的坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？你预感的终点在哪里？", "在座谁的哪句评价，曾让你在深夜里反复咀嚼、甚至感到背脊发凉？", "如果可以从在座某人身上“偷”走一种天赋，你最想偷谁的？即便这会让他从此沦为平庸。", "找一位玩家问“说出一个你一直没敢向我确认的、关于我的负面传闻或质疑。”", "找一位玩家问“如果给我们的交情设计一个“重启键”，你最想回到哪一个时间点？”", "你曾在哪一瞬间，觉得我其实是一个极其自私、且完全不顾及你感受的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”伪装者？你抓到过他什么破绽？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”，让你每次接触后都感到精疲力竭？", "如果我们这群人被关进密室，只能活一个人，你觉得最后活下来的那个“幸存者”会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？不是性格相近，而是那种即便不说话，你也觉得灵魂在同一个频率上。", "描述一个你觉得我最“面目可憎”或最让你感到陌生、冰冷的瞬间。", "如果现在就是终点，你在这个星球上留下的最真实、不可磨灭“生命痕迹”是什么？", "如果我们要一起去流亡，你觉得谁会是那个最先崩溃、甚至会背叛大家的人？", "哪一次你感到极其强烈的“归属感”", "如果你可以选择在死后保留一段记忆，从而在下一世继续寻找某个人，你会保留关于谁的哪段记忆？", "问在座玩家“描述一个你觉得我身上最“廉价”品质，哪怕它曾被我引以为傲。”", "在座的人里，谁是你最想深交但一直觉得“气场不合”的人？", "说出一个你删除的一条信息，为什么删除？", "你现在的社交圈子里，谁是你眼中那个“除了有点钱/资源，其实一无是处”的蠢货？"];
+    const questions = ["找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？请给出你的理性逻辑。", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？为什么？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？哪怕只有 24 小时。", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "找一位玩家问“撇开工作上的联系，你觉得我们可以成为好朋友吗？”", "如果你有一张1000万的彩票，必须送出去，你会选择送给在座的谁？", "在座的人里，谁是你曾经最看不起、但现在由衷佩服的人？发生了什么让你转念？", "如果你明天就要消失，你最想坦白的一个负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们可以合伙干一件“违背常规但符合本心”的坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？你预感的终点在哪里？", "在座谁的哪句评价，曾让你在深夜里反复咀嚼、甚至感到背脊发凉？", "如果可以从在座某人身上“偷”走一种天赋，你最想偷谁的？即便这会让他从此沦为平庸。", "找一位玩家问“说出一个你一直没敢向我确认的、关于我的负面传闻或质疑。”", "找一位玩家问“如果给我们的交情设计一个“重启键”，你最想回到哪一个时间点？”", "你曾在哪一瞬间，觉得我其实是一个极其自私、且完全不顾及你感受的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”伪装者？你抓到过他什么破绽？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”，让你每次接触后都感到精疲力竭？", "如果我们这群人被关进密室，只能活一个人，你觉得最后活下来的那个“幸存者”会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？不是性格相近，而是那种即便不说话，你也觉得灵魂在同一个频率上。", "描述一个你觉得我最“面目可憎”或最让你感到陌生、冰冷的瞬间。", "如果现在就是终点，你在这个星球上留下的最真实、不可磨灭“生命痕迹”是什么？", "如果我们要一起去流亡，你觉得谁会是那个最先崩溃、甚至会背叛大家的人？", "哪一次你感到极其强烈的“归属感”", "如果你可以选择在死后保留一段记忆，从而在下一世继续寻找某个人，你会保留关于谁的哪段记忆？", "问在座玩家“描述一个你觉得我身上最“廉价”的品质，哪怕它曾被我引以为傲。”", "在座的人里，谁是你最想深交但一直觉得“气场不合”的人？", "说出一个你删除的一条信息，为什么删除？", "你现在的社交圈子里，谁是你眼中那个“除了有点钱/资源，其实一无是处”的蠢货？"];
     const emojis = ["🃏", "🤡", "💀", "👁️", "🌙", "🧿", "🔥", "🔮"];
     const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
 
@@ -110,16 +111,48 @@
     function startApp(host) {
         myNick = document.getElementById('nick-in').value || "ANON";
         myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
-        isHost = host; document.getElementById('setup').style.display = 'none'; document.getElementById('v-gate').style.display = 'flex';
-        renderDeck();
-        peer = new Peer({ config: iceCfg, secure: true });
-        peer.on('open', id => {
-            document.getElementById('room-text').innerText = id;
-            if(isHost) { players = [{id, nick: myNick, avatar: myAvatar, canTrans: true, isSpeaking: false}]; sync(); } 
-            else { connect(document.getElementById('id-in').value.trim()); }
-        });
-        peer.on('connection', setupConn);
-        peer.on('call', call => { console.log("Incoming call from", call.peer); call.answer(localStream); handleVoiceStream(call); });
+        isHost = host;
+        
+        const hostBtn = document.getElementById('host-btn');
+        const joinBtn = document.getElementById('join-btn');
+        hostBtn.disabled = true; joinBtn.disabled = true;
+        hostBtn.innerText = "连接中...";
+
+        // 容错处理：如果5秒没反应，重置按钮
+        setTimeout(() => {
+            if (!peer) {
+                alert("信号连接超时，请检查网络或刷新重试。");
+                hostBtn.disabled = false; joinBtn.disabled = false;
+                hostBtn.innerText = "创 建";
+            }
+        }, 8000);
+
+        try {
+            peer = new Peer({ config: iceCfg, secure: true });
+            peer.on('open', id => {
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('v-gate').style.display = 'flex';
+                document.getElementById('room-text').innerText = id;
+                if(isHost) {
+                    players = [{id, nick: myNick, avatar: myAvatar, canTrans: true, isSpeaking: false}];
+                    renderPlayers(); renderDeck();
+                } else {
+                    const rid = document.getElementById('id-in').value.trim();
+                    connectToId(rid);
+                }
+            });
+            peer.on('connection', setupConn);
+            peer.on('call', call => { call.answer(localStream); handleVoiceStream(call); });
+            peer.on('error', err => { console.error(err); alert("连接错误: " + err.type); });
+        } catch(e) {
+            alert("初始化失败，请在HTTPS环境下运行。");
+        }
+    }
+
+    function connectToId(rid) {
+        if(!rid) { alert("请输入房号"); return; }
+        const c = peer.connect(rid, { reliable: true });
+        setupConn(c);
     }
 
     async function activateVoice() {
@@ -128,9 +161,8 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
             localStream.getAudioTracks()[0].enabled = false;
             document.getElementById('mic-btn').disabled = false;
-            // 房主连接现有玩家
             if(isHost) conns.forEach(c => peer.call(c.peer, localStream));
-        } catch (e) { alert("麦克风授权失败"); }
+        } catch (e) { console.warn("麦克风不可用"); }
     }
 
     function handleVoiceStream(call) {
@@ -143,7 +175,6 @@
                 document.getElementById('audio-pool').appendChild(audio);
             }
             audio.srcObject = stream;
-            audio.play().catch(e => console.log("Audio play blocked"));
         });
     }
 
@@ -151,10 +182,93 @@
         c.on('open', () => {
             if(!conns.find(x => x.peer === c.peer)) conns.push(c);
             c.send({type:'JOIN', nick: myNick, avatar: myAvatar});
-            // 关键：一旦数据连通，立刻发起语音呼叫
-            if(localStream) peer.call(c.peer, localStream);
         });
         c.on('data', data => {
-            if(data.type === 'JOIN') { 
+            if(data.type === 'JOIN' && isHost) {
                 if(!players.find(p => p.id === c.peer)) {
-                    players.push({id: c.peer, nick: data.nick, avatar: data.avatar, canTrans: true, isSpeaking
+                    players.push({id: c.peer, nick: data.nick, avatar: data.avatar, canTrans: true, isSpeaking: false});
+                    c.send({type: 'PEER_LIST', list: players.map(p => p.id)});
+                    sync();
+                }
+            } 
+            else if(data.type === 'PEER_LIST') {
+                data.list.forEach(peerId => {
+                    if(peerId !== peer.id && !callList.has(peerId)) {
+                        let call = peer.call(peerId, localStream);
+                        if(call) { handleVoiceStream(call); callList.set(peerId, call); }
+                    }
+                });
+            }
+            else if(data.type === 'SYNC') {
+                players = data.players; flipped = data.flipped; turnIdx = data.turnIdx;
+                isShowing = data.isShowing; likes = data.likes; curQIdx = data.curQIdx;
+                applyGlobalState();
+            }
+            else if(data.type === 'DRAW') { if(isHost) { isShowing = true; curQIdx = data.index; flipped.push(data.index); sync(); } }
+            else if(data.type === 'LIKE') { if(isHost) { if(!likes.includes(data.from)) likes.push(data.from); sync(); } }
+            else if(data.type === 'FINISH') { if(isHost) { turnIdx = (turnIdx + 1) % players.length; isShowing = false; likes = []; sync(); } }
+            else if(data.type === 'CHAT') { appendChat(data.nick, data.msg); if(isHost) broadcast(data); }
+            else if(data.type === 'VOICE_STATE') { let p = players.find(x => x.id === data.from); if(p){ p.isSpeaking = data.state; renderPlayers(); } if(isHost) sync(); }
+        });
+        c.on('close', () => { if(isHost) handleDisconnect(c.peer); });
+    }
+
+    function applyGlobalState() {
+        const overlay = document.getElementById('focused-overlay');
+        if(isShowing && curQIdx !== -1) {
+            document.getElementById('q-text').innerText = questions[curQIdx];
+            overlay.style.display = 'flex';
+        } else { overlay.style.display = 'none'; }
+        renderPlayers(); renderDeck(); updateTurnStatus(); updateThumbs();
+    }
+
+    function sync() { if(isHost) broadcast({type:'SYNC', players, flipped, turnIdx, isShowing, likes, curQIdx}); applyGlobalState(); }
+    function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
+
+    function updateThumbs() {
+        const box = document.getElementById('thumb-box'); box.innerHTML = "";
+        const others = Math.max(players.length - 1, 0);
+        const count = players.filter(p => p.id !== players[turnIdx]?.id && likes.includes(p.id)).length;
+        const threshold = Math.max(others - 1, 0);
+        for(let j=0; j<others; j++) {
+            const s = document.createElement('span'); s.style.color = (j < count) ? "var(--gold)" : "#333";
+            s.innerText = "👍"; box.appendChild(s);
+        }
+        const b = document.getElementById('f-btn');
+        if(players[turnIdx]?.id === peer.id) {
+            b.disabled = (count < threshold && others > 0);
+            b.innerText = b.disabled ? `等待👍(${count}/${threshold})` : "确 认 结 束";
+        } else { b.disabled = true; b.innerText = "正在发言..."; }
+    }
+
+    function handleLike() {
+        if(likes.includes(peer.id)) return;
+        if(isHost) { if(!likes.includes(peer.id)) likes.push(peer.id); sync(); } 
+        else { conns.forEach(c => c.send({type:'LIKE', from: peer.id})); }
+        document.getElementById('like-btn').disabled = true;
+    }
+
+    function confirmEnd() {
+        if(isHost) { turnIdx = (turnIdx + 1) % players.length; isShowing = false; likes = []; sync(); } 
+        else { conns.forEach(c => c.send({type:'FINISH'})); }
+    }
+
+    function draw(i) {
+        if(players[turnIdx]?.id !== peer.id || isShowing) return;
+        if(isHost) { isShowing = true; curQIdx = i; flipped.push(i); sync(); } 
+        else { conns.forEach(c => c.send({type:'DRAW', index: i})); }
+    }
+
+    function renderPlayers() { document.getElementById('player-count').innerText = "ONLINE: " + players.length; document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-avatar ${i === turnIdx ? 'active' : ''} ${p.isSpeaking ? 'speaking' : ''}"><div class="emoji">${p.avatar}</div><div class="name">${p.nick}</div></div>`).join(''); }
+    function updateTurnStatus() { let isMyTurn = (players[turnIdx]?.id === peer.id); document.getElementById('trans-btn').disabled = !isMyTurn || !players[turnIdx]?.canTrans; document.getElementById('like-btn').disabled = isMyTurn || !isShowing; }
+    function renderDeck() { let d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { const c = document.createElement('div'); c.className = "card" + (flipped.includes(i) ? " flipped" : ""); c.onclick = () => draw(i); d.appendChild(c); } }
+    function sendChat() { let i = document.getElementById('c-in'); if(!i.value) return; appendChat(myNick, i.value); let d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; }
+    function appendChat(n, m) { let b = document.getElementById('c-msgs'); let d = document.createElement('div'); d.innerHTML = `<span style="color:var(--gold)">${n}:</span> ${m}`; b.appendChild(d); b.scrollTop = b.scrollHeight; }
+    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开"; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; let me = players.find(p => p.id === peer.id); if(me) me.isSpeaking = !isMuted; if(isHost) sync(); else conns.forEach(c => c.send({type:'VOICE_STATE', from:peer.id, state:!isMuted})); renderPlayers(); }
+    function openTrans() { let list = document.getElementById('trans-targets'); list.innerHTML = players.filter(p => p.id !== peer.id).map(p => `<button class="p-btn" style="padding:10px" onclick="sendTrans('${p.id}')">给: ${p.nick}</button>`).join(''); document.getElementById('trans-modal').style.display = 'flex'; }
+    function sendTrans(tid) { if(isHost) { players[turnIdx].canTrans = false; turnIdx = players.findIndex(p => p.id === tid); sync(); } else { conns.forEach(c => c.send({type:'TRANS_REQ', from:peer.id, targetId:tid, nick:myNick})); } closeTrans(); }
+    function closeTrans() { document.getElementById('trans-modal').style.display = 'none'; }
+    function handleDisconnect(peerId) { let idx = players.findIndex(p => p.id === peerId); if(idx === -1) return; let wasTurn = (turnIdx === idx); players.splice(idx, 1); if(wasTurn) { turnIdx = turnIdx % players.length; isShowing = false; likes = []; } else if(turnIdx > idx) { turnIdx--; } conns = conns.filter(conn => conn.peer !== peerId); sync(); }
+</script>
+</body>
+</html>
