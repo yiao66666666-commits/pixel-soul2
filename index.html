@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PIXEL SOUL V41</title>
+    <title>PIXEL SOUL V42</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #1a0826; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; }
@@ -15,75 +15,91 @@
             background-size: 100% 3px, 3px 100%;
         }
 
+        /* 顶部与玩家栏美化 */
+        .status-bar { height: 25px; background: #000; border-bottom: 2px solid var(--pink); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.6rem; color: var(--gold); z-index: 1001; }
+        
+        .player-bar { 
+            height: 100px; padding: 15px 10px; display: flex; gap: 20px; overflow-x: auto; 
+            background: rgba(0,0,0,0.6); z-index: 1001; border-bottom: 1px solid #333;
+            align-items: flex-start;
+        }
+        .p-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 8px; }
+        .p-avatar { 
+            width: 45px; height: 45px; border: 3px solid #444; border-radius: 12px; 
+            position: relative; display: flex; align-items: center; justify-content: center; 
+            background: #000; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); }
+        .p-avatar.pk-state { border-color: var(--pink); box-shadow: 0 0 15px var(--pink); animation: pk-pulse 1s infinite alternate; }
+        @keyframes pk-pulse { from { opacity: 1; } to { opacity: 0.7; } }
+        .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -12px; right: -12px; font-size: 0.9rem; }
+        .p-item .name { font-size: 0.6rem; color: #aaa; width: 60px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         /* 全屏规则弹窗 */
-        #rule-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; border: 10px double var(--pink); margin: 20px; animation: modalIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes modalIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* 投票清算面板 */
-        #reveal-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 25000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .reveal-card { width: 80%; background: #000; border: 4px solid var(--gold); padding: 20px; box-shadow: 0 0 30px var(--gold); transform: skewX(-5deg); }
-        .reveal-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px dashed #444; font-size: 1.2rem; transition: 0.5s; }
-        .reveal-item.highlight { background: var(--pink); color: #fff; transform: scale(1.1); }
+        #rule-modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 30000; display: none; 
+            flex-direction: column; align-items: center; justify-content: center; padding: 30px; 
+            text-align: center; border: 4px solid var(--pink); margin: 40px 20px; 
+            box-shadow: 0 0 50px #000;
+        }
 
-        /* 基础样式保持并优化 */
-        #identity-tip { position: fixed; top: 110px; left: 50%; transform: translateX(-50%); background: var(--pink); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 0.7rem; z-index: 1001; display: none; animation: flash 1s infinite; }
-        @keyframes flash { 50% { opacity: 0.5; } }
-
-        .player-bar { height: 75px; padding: 10px; display: flex; gap: 10px; overflow-x: auto; background: rgba(0,0,0,0.5); z-index: 1001; }
-        .p-avatar { width: 42px; height: 42px; border: 3px solid #444; border-radius: 10px; position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #000; transition: 0.3s; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
-        .p-avatar.pk-state { border-color: var(--pink); animation: pk-glow 1s infinite alternate; }
-        @keyframes pk-glow { from { box-shadow: 0 0 5px var(--pink); } to { box-shadow: 0 0 20px var(--pink); } }
-        
-        .main-deck { flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; overflow-y: auto; align-content: start; }
-        .card { aspect-ratio: 2/3; background: #4d1b7b; border-radius: 12px; border: 3px solid rgba(255,255,255,0.2); cursor: pointer; background-image: repeating-conic-gradient(#5e2a7e 0 25%, #4d1b7b 0 50%); background-size: 10px 10px; }
+        /* 卡牌主区 */
+        .main-deck { flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
+        .card { aspect-ratio: 2/3; background: #4d1b7b; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; background-image: repeating-conic-gradient(#5e2a7e 0 25%, #4d1b7b 0 50%); background-size: 10px 10px; box-shadow: 4px 4px 0 #000; }
         .card.flipped { opacity: 0.05; pointer-events: none; }
 
-        #focused-overlay { position: fixed; top: 100px; left: 0; right: 0; height: 350px; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; pointer-events: none; }
-        .focused-card { width: 85%; max-width: 280px; min-height: 280px; background: #fff; color: #1a1a2e; border-radius: 20px; border: 6px solid #1a1a2e; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; transform: rotate(-1deg); box-shadow: 10px 10px 0px rgba(0,0,0,0.6); }
+        /* 弹出询问卡 */
+        #focused-overlay { position: fixed; top: 120px; left: 0; right: 0; height: 350px; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; pointer-events: none; }
+        .focused-card { width: 85%; max-width: 290px; min-height: 280px; background: #fff; color: #1a1a2e; border-radius: 20px; border: 6px solid #1a1a2e; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; pointer-events: auto; transform: rotate(-1deg); box-shadow: 10px 10px 0px rgba(0,0,0,0.6); }
 
+        /* 投票动画遮罩 */
+        #reveal-overlay { position: fixed; inset: 0; background: #000; z-index: 25000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .reveal-box { width: 80%; background: #1a0826; border: 3px solid var(--gold); padding: 20px; box-shadow: 0 0 30px var(--gold); }
+        .reveal-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px dashed #444; font-size: 1.1rem; }
+
+        /* 底部控制中心：高度固定 195px */
         .footer-console { height: 195px; background: #000; border-top: 3px solid var(--pink); display: flex; flex-direction: column; z-index: 10000; position: relative; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.7rem; color: var(--blue); }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.75rem; color: var(--blue); }
         .btn-grid { height: 75px; border-top: 2px solid var(--blue); display: flex; padding: 10px; gap: 8px; }
 
-        .p-btn { background: #111; color: var(--blue); border: 3px solid var(--blue); border-radius: 10px; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 3px 3px 0px #000; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
-        .p-btn:active:not(:disabled) { transform: translate(1px, 1px); box-shadow: 0px 0px 0px #000; }
+        .p-btn { background: #111; color: var(--blue); border: 3px solid var(--blue); border-radius: 10px; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 3px 3px 0px #000; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; }
+        .p-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0px 0px 0px #000; }
         .p-btn.gold { color: var(--gold); border-color: var(--gold); }
         .p-btn.pink { color: var(--pink); border-color: var(--pink); }
         .p-btn.active { background: var(--green); color: #000; border-color: #fff; }
 
-        #jury-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 35000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #jury-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 35000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #setup { position: fixed; inset: 0; background: var(--bg); z-index: 40000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
+        #identity-tip { position: fixed; top: 125px; left: 50%; transform: translateX(-50%); background: var(--pink); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 0.7rem; z-index: 1001; display: none; }
     </style>
 </head>
 <body>
 
-<div id="rule-modal" onclick="this.style.display='none'">
-    <h2 id="rule-title" style="color:var(--gold); font-size: 1.8rem; margin:0;">阶段名称</h2>
-    <p id="rule-desc" style="color:#ccc; font-size: 0.9rem; margin: 20px 0; line-height: 1.5;"></p>
-    <div style="color:var(--pink); font-size: 0.7rem;">[ 点击屏幕继续 ]</div>
+<div id="rule-modal">
+    <h2 id="rule-title" style="color:var(--gold);"></h2>
+    <p id="rule-desc" style="line-height: 1.6; color: #ccc;"></p>
 </div>
 
 <div id="reveal-overlay">
-    <h2 id="reveal-title" style="color:var(--pink); text-shadow: 0 0 10px var(--pink);">扫描嫌疑人...</h2>
-    <div id="reveal-list" class="reveal-card"></div>
+    <h2 style="color:var(--pink); margin-bottom: 20px;">身份扫描中...</h2>
+    <div id="reveal-list" class="reveal-box"></div>
 </div>
 
-<div id="identity-tip">你是说谎者：严禁说真话！</div>
+<div id="identity-tip">你是说谎者：禁说真话！</div>
 
 <div id="setup">
     <h1 style="color:var(--pink); font-size: 2.5rem; text-shadow: 6px 6px 0 #000; margin-bottom: 20px;">PIXEL SOUL</h1>
-    <div id="step-1-ui" class="setup-box" style="width:100%; max-width:280px; display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="nick-in" placeholder="NICKNAME..." style="padding:15px; border:3px solid var(--blue); background:#000; color:#fff; font-family: inherit; text-align: center;">
+    <div id="step-1-ui" style="width:100%; max-width:280px; display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="nick-in" placeholder="NICKNAME..." style="padding:15px; border:3px solid var(--blue); background:#000; color:#fff; font-family: inherit; text-align: center; width:100%;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="p-btn pink" style="padding:15px" onclick="startApp('host')">创建房间</button>
-            <button class="p-btn" style="padding:15px" onclick="showJoin('join')">加入房间</button>
+            <button class="p-btn pink" onclick="startApp('host')">创建房间</button>
+            <button class="p-btn" onclick="showJoin('join')">加入房间</button>
         </div>
         <button class="p-btn purple" style="padding:12px;" onclick="showJoin('companion')">陪伴师入口</button>
         <button class="p-btn gold" id="rejoin-btn" style="padding:10px; display:none;" onclick="startApp('rejoin')">回到上次游戏</button>
     </div>
     <div id="step-2-ui" style="display:none; width:100%; max-width:280px;">
-        <input type="text" id="id-in" placeholder="房号..." style="padding:15px; border:3px solid var(--gold); background:#000; color:#fff; font-family: inherit; text-align: center; width:100%;">
+        <input type="text" id="id-in" placeholder="6位数房号..." style="padding:15px; border:3px solid var(--gold); background:#000; color:#fff; font-family: inherit; text-align: center; width:100%;">
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top:15px;">
             <button class="p-btn" onclick="hideJoin()">返回</button>
             <button class="p-btn gold" onclick="startApp(pendingMode)">确认进入</button>
@@ -92,12 +108,12 @@
 </div>
 
 <div id="v-gate" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:38000; display:none; flex-direction:column; align-items:center; justify-content:center;">
-    <h2 style="color:var(--gold);">信号同步就绪</h2>
+    <h2 style="color:var(--gold); margin-bottom: 30px;">信号网路同步</h2>
     <button class="p-btn gold" style="padding:20px 40px;" onclick="activateVoice()">进入灵魂对讲</button>
 </div>
 
 <div class="status-bar">
-    <span id="game-status">等待房主...</span>
+    <span id="game-status">等待开始...</span>
     <span>ROOM: <b id="room-text">----</b></span>
 </div>
 
@@ -107,7 +123,7 @@
 <div id="focused-overlay">
     <div class="focused-card" id="f-card">
         <div id="soul-header" style="color:var(--pink); font-weight: 900; font-size: 0.6rem;">[ SOUL FILE ]</div>
-        <div id="q-text" style="font-size: 0.9rem; line-height: 1.4; font-weight: bold; color: #1a1a2e; margin: 10px 0;"></div>
+        <div id="q-text" style="font-size: 0.9rem; line-height: 1.4; font-weight: bold; color: #1a1a2e;"></div>
         <div id="vote-display" style="display:flex; gap:8px; font-size:1.5rem;"></div>
         <button id="f-btn" class="p-btn gold" style="width:100%; height:45px; flex:none;" disabled onclick="confirmEnd()">等待通过</button>
     </div>
@@ -115,8 +131,8 @@
 
 <div id="jury-panel">
     <div style="width:100%; max-width:300px; background:#2b0b3d; border:4px solid var(--gold); padding:20px; border-radius:15px; text-align:center;">
-        <h3 style="color:var(--gold);">陪审团决议</h3>
-        <p id="jury-msg" style="font-size:0.8rem; color:#ccc; margin-bottom:20px;">请选出那个说谎的人</p>
+        <h3 style="color:var(--gold);">陪审团大选</h3>
+        <p id="jury-msg" style="font-size:0.8rem; color:#ccc; margin-bottom:20px;">投给最像说谎的人</p>
         <div id="jury-btns" style="display:flex; flex-direction:column; gap:10px;"></div>
     </div>
 </div>
@@ -126,16 +142,16 @@
     <div style="padding:5px; border-top:1px solid #333;"><input type="text" id="c-in" placeholder="吐槽..." style="width:100%; background:#000; border:2px solid var(--blue); color:var(--blue); padding:10px; font-family:inherit;" onkeypress="if(event.keyCode==13) sendChat()"></div>
     <div class="btn-grid">
         <button id="mic-btn" class="p-btn" onclick="toggleMic()">麦克风:关</button>
-        <button id="h-btn" class="p-btn green" style="flex:1.5; color:var(--green);" onclick="vote('H')" disabled>👍 诚实</button>
-        <button id="l-btn" class="p-btn pink" style="flex:1.5; color:var(--pink);" onclick="vote('L')" disabled>👎 撒谎</button>
-        <button id="start-btn" class="p-btn gold" style="display:none;" onclick="hostStartGame()">开始审判</button>
+        <button id="h-btn" class="p-btn green" style="flex:1.2; color:var(--green);" onclick="vote('H')" disabled>👍 诚实</button>
+        <button id="l-btn" class="p-btn pink" style="flex:1.2; color:var(--pink);" onclick="vote('L')" disabled>👎 撒谎</button>
+        <button id="start-btn" class="p-btn gold" style="display:none;" onclick="hostStartGame()">开启灵魂审判</button>
     </div>
 </div>
 
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    const questions = ["找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "找一位玩家问“撇开工作上的联系，你觉得我们可以成为好朋友吗？”", "如果你有一张1000万的彩票，必须送出去，你会选择送给在座的谁？", "在座的人里，谁是你曾经最看不起、但现在由衷佩服的人？", "如果你明天就要消失，你最想坦白的一个负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们可以合伙干一件“违背常规但符合本心”的坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？", "在座谁的哪句评价，曾让你在深夜里反复咀嚼、甚至感到背脊发凉？", "如果可以从在座某人身上“偷”走一种天赋，你最想偷谁的？", "找一位玩家问“说出一个你一直没敢向我确认的、关于我的负面传闻。”", "找一位玩家问“如果给我们的交情设计一个重启键，你最想回到哪一个时间点？”", "你曾在哪一瞬间，觉得我其实是一个极其自私的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”的伪装者？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”，让你接触后精疲力竭？", "如果我们被关进密室，只能活一个人，最后活下来的会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？", "描述一个你觉得我最“面目可憎”或最让你感到陌生的瞬间。", "如果现在就是终点，你在星球上留下的最真实生命痕迹是什么？", "如果我们要一起去流亡，你觉得谁会是那个最先崩溃的人？", "哪一次你感到极其强烈的“归属感”", "如果你死后能保留一段记忆，你会保留关于谁的哪段记忆？", "问在座玩家“描述一个你觉得我身上最廉价的品质，哪怕我曾引以为傲。”", "在座的人里，谁是你最想深交但一直觉得气场不合的人？", "说出一个你删除的一条信息，为什么删除？", "你现在的社交圈子里，谁是你眼中那个除了资源其实一无处的蠢货？"];
+    const questions = ["找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "找一位玩家问“撇开工作上的联系，你觉得我们可以成为好朋友吗？”", "如果你有一张1000万的彩票，必须送出去，你会选择送给在座的谁？", "在座的人里，谁是你曾经最看不起、但现在由衷佩服的人？", "如果你明天就要消失，你最想坦白的一个负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们可以合伙干一件“违背常规但符合本心”的坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？", "在座谁的哪句评价，曾让你在深夜里反复咀嚼、甚至感到背脊发凉？", "如果可以从在座某人身上“偷”走一种天赋，你最想偷谁的？", "找一位玩家问“说出一个你一直没敢向我确认的、关于我的负面传闻。”", "找一位玩家问“如果给我们的交情设计一个重启键，你最想回到哪一个时间点？”", "你曾在哪一瞬间，觉得我其实是一个极其自私的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”的伪装者？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”，让你接触后精疲力竭？", "如果我们被关进密室，只能活一个人，最后活下来的会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？", "描述一个你觉得我最“面目可憎”或最让你感到陌生的瞬间。", "如果现在就是终点，你在星球上留下的最真实生命痕迹是什么？", "如果我们要一起去流亡，你觉得谁会是最先崩溃的人？", "哪一次你感到极其强烈的“归属感”", "如果你死后能保留一段记忆，你会保留关于谁的哪段记忆？", "问在座玩家“描述一个你觉得我身上最廉价的品质，哪怕它曾被我引以为傲。”", "在座的人里，谁是你最想深交但一直觉得气场不合的人？", "说出一个你删除的一条信息，为什么删除？", "你现在的社交圈子里，谁是你眼中那个除了资源其实一无处的蠢货？"];
     const emojis = ["🃏", "🎭", "💀", "👁️", "🌙", "🧿", "🔥", "🔮"];
     const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
 
@@ -180,18 +196,17 @@
 
     function showRule(state) {
         const modal = document.getElementById('rule-modal');
-        const title = document.getElementById('rule-title');
-        const desc = document.getElementById('rule-desc');
         const rules = {
-            'NORMAL': { t: '第一阶段: 灵魂博弈', d: '全员依次抽牌发言。除发言者外，其他人请根据直觉投出【诚实】或【撒谎】。请注意，说谎者就潜伏在你们之中！' },
-            'PK': { t: '突发: 同票对线', d: '出现了多名头号嫌疑人！PK者请轮流进行最后一段自证发言，陪审团正在盯着你们。' },
-            'JURY': { t: '最终裁决: 陪审团时刻', d: '不同票的玩家组成陪审团，你们手中的那一票将决定谁被公开处刑。选错人，说谎者将赢得复仇！' },
-            'JUDGMENT': { t: '真相大审判', d: '说谎者被捕获（或诚实人被冤枉）。该玩家必须接受所有人的提问拷问，直到全员投出【👍】。' }
+            'NORMAL': { t: '第一阶段: 灵魂博弈', d: '每个人依次抽牌发言。其他人请直觉投出【诚实】或【撒谎】。说谎者就潜伏在你们之中！' },
+            'PK': { t: '突发: 同票对线', d: '出现了多名高嫌疑人！PK者请轮流自证发言。' },
+            'JURY': { t: '裁决时刻: 陪审团投票', d: '不同票的玩家作为陪审团，投出你们心中唯一的说谎者。' },
+            'JUDGMENT': { t: '真相大审判', d: '审判已降临。接受全员的拷问，直到全员投出【👍】。' }
         };
         if(rules[state]) {
-            title.innerText = rules[state].t;
-            desc.innerText = rules[state].d;
+            document.getElementById('rule-title').innerText = rules[state].t;
+            document.getElementById('rule-desc').innerText = rules[state].d;
             modal.style.display = 'flex';
+            setTimeout(() => { modal.style.display = 'none'; }, 4000);
         }
     }
 
@@ -210,7 +225,7 @@
                 gameState = data.gameState; liarId = data.liarId; pkList = data.pkList;
                 applyState();
             }
-            else if(data.type === 'REVEAL_ANIM' && isHost === false) { startRevealAnimation(data.list, data.suspectId); }
+            else if(data.type === 'REVEAL_ANIM') { playRevealAnim(data.list, data.suspectId); }
             else if(data.type === 'VOTE' && isHost) { votes.push({from: data.from, type: data.val}); if(data.val === 'L') players[turnIdx].lieVotes++; sync(); }
             else if(data.type === 'FINAL_VOTE' && isHost) handleFinalVote(data.targetId);
             else if(data.type === 'DRAW' && isHost) { isShowing = true; curQIdx = data.index; flipped.push(data.index); sync(); }
@@ -220,33 +235,18 @@
         c.on('close', () => { if(isHost) handleDisconnect(c.peer); });
     }
 
-    async function startRevealAnimation(list, suspectId) {
+    async function playRevealAnim(list, suspectId) {
         const overlay = document.getElementById('reveal-overlay');
         const box = document.getElementById('reveal-list');
         overlay.style.display = 'flex';
         box.innerHTML = "";
-        
         for(let item of list) {
-            let div = document.createElement('div');
-            div.className = "reveal-item";
+            let div = document.createElement('div'); div.className = "reveal-row";
             div.innerHTML = `<span>${item.nick}</span> <span id="v-${item.id}">0</span>`;
             box.appendChild(div);
-            
-            // 票数滚动动画
             let count = 0;
-            await new Promise(res => {
-                let timer = setInterval(() => {
-                    count++;
-                    document.getElementById(`v-${item.id}`).innerText = count;
-                    if(count >= item.votes) { clearInterval(timer); res(); }
-                }, 100);
-            });
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => { let t = setInterval(() => { count++; document.getElementById(`v-${item.id}`).innerText = count; if(count >= item.votes){ clearInterval(t); r(); } }, 150); });
         }
-
-        // 高亮嫌疑人
-        const suspectEl = [...box.children].find(el => el.innerHTML.includes(players.find(p=>p.id===suspectId).nick));
-        suspectEl.classList.add('highlight');
         await new Promise(r => setTimeout(r, 2000));
         overlay.style.display = 'none';
     }
@@ -263,39 +263,27 @@
     function nextTurn() {
         if(!isHost) return;
         const realPs = players.filter(p => !p.isCompanion);
-        
         if(gameState === 'NORMAL' && flipped.length >= realPs.length) {
             let max = Math.max(...realPs.map(p => p.lieVotes));
             pkList = realPs.filter(p => p.lieVotes === max).map(p => p.id);
-            
-            // 发起清算动画
             const revealList = realPs.map(p => ({id: p.id, nick: p.nick, votes: p.lieVotes}));
             broadcast({type:'REVEAL_ANIM', list: revealList, suspectId: pkList[0]});
-            startRevealAnimation(revealList, pkList[0]);
-
+            playRevealAnim(revealList, pkList[0]);
             setTimeout(() => {
-                if(pkList.length > 1) {
-                    gameState = 'PK'; turnIdx = players.findIndex(p => p.id === pkList[0]);
-                } else {
-                    handleFinalVote(pkList[0]); return;
-                }
+                if(pkList.length > 1) { gameState = 'PK'; turnIdx = players.findIndex(p => p.id === pkList[0]); } 
+                else { handleFinalVote(pkList[0]); return; }
                 sync();
-            }, 5000); // 等动画播完
+            }, 5000);
             return;
         } 
-        
         if(gameState === 'PK') {
             let cur = pkList.indexOf(players[turnIdx].id);
-            if(cur < pkList.length - 1) { turnIdx = players.findIndex(p => p.id === pkList[cur + 1]); } 
-            else { gameState = 'JURY'; }
-        } else {
-            do { turnIdx = (turnIdx + 1) % players.length; } while (players[turnIdx].isCompanion);
-        }
+            if(cur < pkList.length - 1) { turnIdx = players.findIndex(p => p.id === pkList[cur + 1]); } else { gameState = 'JURY'; }
+        } else { do { turnIdx = (turnIdx + 1) % players.length; } while (players[turnIdx].isCompanion); }
         isShowing = false; votes = []; sync();
     }
 
     function handleFinalVote(tid) {
-        let p = players.find(x => x.id === tid);
         if(tid === liarId) { gameState = 'JUDGMENT'; turnIdx = players.findIndex(x => x.id === tid); }
         else { gameState = 'JUDGMENT'; turnIdx = players.findIndex(x => x.id === liarId); }
         isShowing = false; votes = []; sync();
@@ -307,7 +295,6 @@
         if(peer.id === liarId && gameState !== 'WAIT') document.getElementById('identity-tip').style.display='block';
         if(isShowing && curQIdx !== -1) { overlay.style.display = 'flex'; document.getElementById('q-text').innerText = questions[curQIdx]; } else { overlay.style.display = 'none'; }
         if(gameState === 'JURY') { jury.style.display='flex'; renderJuryUI(); } else jury.style.display='none';
-        
         document.getElementById('game-status').innerText = gameState;
         renderPlayers(); renderDeck(); updateTurnStatus(); updateVoteDisplay();
     }
@@ -332,19 +319,19 @@
             const others = players.filter(p => !p.isCompanion && p.id !== peer.id);
             const threshold = (gameState === 'JUDGMENT') ? others.length : Math.max(others.length - 1, 0);
             b.disabled = votes.length < threshold;
-            b.innerText = b.disabled ? `等待投票(${votes.length}/${threshold})` : "确认结束";
+            b.innerText = b.disabled ? `等待评价(${votes.length}/${others.length-1})` : "确认结束";
         }
     }
 
+    function vote(val) { if(isHost) { votes.push({from: peer.id, type: val}); if(val==='L') players[turnIdx].lieVotes++; sync(); } else { conns.forEach(c => c.send({type:'VOTE', from: peer.id, val})); } }
     function sync() { if(isHost) broadcast({type:'SYNC', players, flipped, turnIdx, isShowing, votes, curQIdx, gameState, liarId, pkList}); applyState(); }
     function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
     function draw(i) { if(players[turnIdx]?.id !== peer.id || isShowing || isCompanion) return; if(isHost) { isShowing = true; curQIdx = i; flipped.push(i); sync(); } else { conns.forEach(c => c.send({type:'DRAW', index: i})); } }
-    function renderPlayers() { document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-avatar ${i===turnIdx?'active':''} ${pkList.includes(p.id)?'pk-state':''} ${p.isCompanion?'companion':''}"><div class="emoji">${p.avatar}</div><div class="name">${p.nick}</div></div>`).join(''); }
+    function renderPlayers() { document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-item"><div class="p-avatar ${i===turnIdx?'active':''} ${pkList.includes(p.id)?'pk-state':''} ${p.isSpeaking?'speaking':''} ${p.isCompanion?'companion':''}"><div class="emoji">${p.avatar}</div></div><div class="name">${p.isCompanion?'[陪]':''}${p.nick}</div></div>`).join(''); }
     function updateTurnStatus() { let isM = (players[turnIdx]?.id === peer.id); document.getElementById('h-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); document.getElementById('l-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); }
     function renderDeck() { let d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { d.innerHTML += `<div class="card ${flipped.includes(i)?'flipped':''}" onclick="draw(${i})"></div>`; } }
     function confirmEnd() { if(isHost) nextTurn(); else conns.forEach(c => c.send({type:'FINISH'})); }
-    function vote(val) { if(isHost) { votes.push({from: peer.id, type: val}); if(val==='L') players[turnIdx].lieVotes++; sync(); } else { conns.forEach(c => c.send({type:'VOTE', from: peer.id, val})); } }
-    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; }
+    function toggleMic() { if(!localStream) return; isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active"; let me = players.find(p => p.id === peer.id); if(me) me.isSpeaking = !isMuted; if(isHost) sync(); else conns.forEach(c => c.send({type:'VOICE_STATE', from:peer.id, state:!isMuted})); }
     function connect(rid) { let c = peer.connect(rid, { reliable: true }); setupConn(c); }
     function handleVoiceStream(call) { call.on('stream', s => { let a=document.createElement('audio'); a.autoplay=true; a.srcObject=s; document.getElementById('audio-bridge').appendChild(a); }); }
     function sendChat() { let i = document.getElementById('c-in'); if(!i.value) return; let d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; }
