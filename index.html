@@ -3,65 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V47.2</title>
+    <title>SPEAK V47.4</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; --black: #000; }
+        :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- 首页底图动画 (绝对保留) --- */
+        /* --- 首页底图 --- */
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.4; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
         /* --- 登录层 --- */
         #login-screen { position: fixed; inset: 0; z-index: 100000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .setup-box { width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; }
-        .balatro-input { padding: 15px; background: #111; border: 4px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; box-shadow: 4px 4px 0 #000; }
-        .companion-link { position: absolute; bottom: 30px; right: 30px; color: var(--purple); font-size: 0.7rem; text-decoration: underline; background: none; cursor: pointer; }
+        .pixel-input { padding: 15px; background: #111; border: 4px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; box-shadow: 4px 4px 0 #000; }
         .history-panel { position: absolute; bottom: 30px; left: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .h-link { font-size: 0.6rem; color: #666; text-decoration: underline; background: none; cursor: pointer; text-align: left; }
+        .h-link { font-size: 0.65rem; color: #666; text-decoration: underline; background: none; cursor: pointer; text-align: left; }
+        .companion-link { position: absolute; bottom: 30px; right: 30px; color: var(--purple); font-size: 0.7rem; text-decoration: underline; background: none; cursor: pointer; }
 
-        /* --- 游戏组件 --- */
-        #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; }
-        #status-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; padding: 0 15px; font-weight: 900; font-size: 0.8rem; }
-        .header-bar { height: 100px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.85); border-bottom: 4px solid #222; }
-        #player-area { display: flex; gap: 10px; overflow-x: auto; flex: 1; }
-        #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; border-left: 2px solid #333; padding-left: 10px; }
-        .p-avatar { width: 44px; height: 44px; border: 4px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .is-companion { border-color: var(--purple) !important; box-shadow: 0 0 10px var(--purple); }
-
-        /* --- 13:16 像素风档案卡 --- */
+        /* --- 圆角像素风档案卡 --- */
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
         #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
         #focus-board { 
-            position: absolute; 
-            width: 80%; aspect-ratio: 13 / 16; /* 严格要求比例 */
-            background: #fff; color: #111; 
-            border: 6px solid #000; outline: 6px solid #fff; outline-offset: -12px; /* 像素叠层边框 */
-            padding: 30px 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
-            z-index: 5001; box-shadow: 15px 15px 0 rgba(0,0,0,0.5);
+            position: absolute; width: 80%; aspect-ratio: 13 / 16; background: #fff; color: #111; 
+            border: 6px solid #000; border-radius: 20px; padding: 30px 20px; display: none; 
+            flex-direction: column; align-items: center; justify-content: space-between;
+            z-index: 5001; box-shadow: 20px 20px 0 rgba(0,0,0,0.5);
             transform: translateY(100%) rotateX(-180deg); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); opacity: 0;
         }
         #focus-board.show { display: flex; transform: translateY(-2%) rotateX(0deg); opacity: 1; }
 
-        /* --- 像素立体按钮 --- */
-        .pixel-btn { 
-            padding: 10px 20px; background: #111; color: var(--gold); border: 4px solid #000;
-            box-shadow: 4px 4px 0 #000, inset -4px -4px 0 #333; 
-            font-weight: 900; font-size: 0.8rem; cursor: pointer; transition: 0.1s;
-        }
-        .pixel-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
-        .btn-pink { background: var(--pink); color: #fff; }
+        /* --- UI布局 --- */
+        .header-bar { height: 110px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #222; }
+        #player-area { display: flex; gap: 10px; overflow-x: auto; flex: 1; }
+        #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; border-left: 1px solid #333; padding-left: 10px; }
+        .p-avatar { width: 44px; height: 44px; border: 4px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border-radius: 8px; }
+        .active .p-avatar { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); }
+        .is-companion { border-color: var(--purple) !important; }
 
+        .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.9); }
+        .modal { width: 85%; max-width: 320px; background: #eee; color: #111; border: 4px solid #000; border-radius: 12px; padding: 25px; text-align: center; }
+
+        .pixel-btn { padding: 12px 24px; background: #000; color: #fff; border: 4px solid #333; box-shadow: 4px 4px 0 #000; font-weight: 900; cursor: pointer; }
         .footer { height: 260px; background: #000; border-top: 4px solid var(--blue); display: flex; flex-direction: column; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; color: var(--blue); }
         .btn-panel { height: 90px; display: flex; padding: 8px; gap: 8px; align-items: center; }
-        .ctrl-btn { flex: 1; height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: bold; font-size: 0.7rem; box-shadow: 3px 3px 0 #000; }
+        .ctrl-btn { flex: 1; height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: bold; font-size: 0.75rem; }
         .mic-btn { border-radius: 50%; width: 66px; height: 66px; flex: none; font-size: 1.5rem; color: #fff; border: 4px solid var(--blue); }
         .mic-btn.active { background: var(--pink); border-color: #fff; }
 
-        #host-launch-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; padding: 15px 40px; background: var(--gold); color: #000; font-weight: 900; border: 6px solid #fff; box-shadow: 0 0 30px var(--gold); }
+        #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 15px 40px; border-radius: 50px; font-weight: 900; border: 4px solid #fff; box-shadow: 0 0 20px var(--gold); }
+
+        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
+        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -69,11 +64,11 @@
 <div class="plasma-bg"></div>
 
 <div id="login-screen">
-    <div style="font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 40px; letter-spacing: -2px;">SPEAK</div>
+    <div style="font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 40px;">SPEAK</div>
     <div class="setup-box">
-        <input type="text" id="nick-in" class="balatro-input" placeholder="代号">
-        <input type="text" id="room-in" class="balatro-input" placeholder="房号">
-        <button class="pixel-btn btn-pink" style="padding:18px; font-size:1.2rem;" onclick="entry('join')">进入游戏</button>
+        <input type="text" id="nick-in" class="pixel-input" placeholder="代号">
+        <input type="text" id="room-in" class="pixel-input" placeholder="房号">
+        <button class="pixel-btn" style="background:var(--pink);" onclick="entry('join')">进入游戏</button>
     </div>
     <div class="history-panel">
         <button class="h-link" onclick="restore('nick')">使用旧代号</button>
@@ -82,20 +77,20 @@
     <button class="companion-link" onclick="entry('companion')">陪伴师入口</button>
 </div>
 
-<div id="audio-overlay" style="position:fixed; inset:0; z-index:200000; background:rgba(0,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center;">
-    <button class="pixel-btn" style="background:var(--gold); color:#000; padding:20px 40px;" onclick="unlockAudio()">同步灵魂频段</button>
-</div>
-
-<div id="rule-overlay" style="position:fixed; inset:0; z-index:200000; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center;">
+<div id="audio-overlay" class="overlay"><button class="pixel-btn" style="background:var(--gold); color:#000;" onclick="unlockAudio()">同步灵魂频段</button></div>
+<div id="rule-overlay" class="overlay">
     <div class="modal">
-        <h3 style="margin-bottom:15px;">- 游戏规则 -</h3>
-        <p style="font-size:0.85rem; line-height:1.6; margin-bottom:20px;">陪伴师引导，全员真诚发言。<br>点击确认即刻开启档案卡同步。</p>
-        <button class="pixel-btn btn-pink" style="width:100%;" onclick="confirmRules()">确认</button>
+        <h3>- 游戏规则 -</h3>
+        <p style="font-size:0.85rem; line-height:1.6; margin:20px 0;">审判已锁定，新玩家无法再进入。<br>请全员保持专注。</p>
+        <button class="pixel-btn" style="background:var(--pink); width:100%;" onclick="confirmRules()">确认</button>
     </div>
 </div>
 
-<div id="main-game">
-    <div id="status-bar"><span>ROOM ID:</span><span id="room-id-val" style="background:#000; color:var(--gold); margin-left:10px; padding:2px 10px; border:2px solid var(--gold);">---</span></div>
+<div id="main-game" style="display:none; flex-direction:column; height:100vh;">
+    <div id="status-bar">
+        <span>ROOM:</span><span id="room-id-val" style="margin-left:10px; background:#000; color:var(--gold); padding:2px 8px;">---</span>
+        <span id="lock-icon" style="margin-left:auto; display:none;">🔒 已锁定</span>
+    </div>
     <div class="header-bar">
         <div id="player-area"></div>
         <div id="companion-area"></div>
@@ -104,28 +99,29 @@
         <div id="card-podium"></div>
         <div id="focus-board">
             <div style="font-size:0.6rem; color:#999; letter-spacing:2px;">[ SENSITIVE FILE ]</div>
-            <div id="q-text" style="font-size:1.3rem; font-weight:bold; text-align:center; padding:10px;">读取中...</div>
-            <button class="pixel-btn" style="width:160px; height:50px; background:#111; color:var(--gold);" onclick="userCmd('CLOSE')">完成回答</button>
+            <div id="q-text" style="font-size:1.3rem; font-weight:bold; text-align:center; padding:15px;">读取中...</div>
+            <button class="pixel-btn" style="background:#111; color:var(--gold);" onclick="userCmd('CLOSE')">完成回答</button>
         </div>
         <div id="deck" style="display:none; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
     </div>
     <div class="footer">
         <div id="chat-flow"></div>
         <div class="btn-panel">
-            <button class="ctrl-btn" onclick="say('👍')">点赞</button>
-            <button class="ctrl-btn" style="border-color:#444;" onclick="say('❌')">异议</button>
+            <button id="btn-like" class="ctrl-btn" disabled onclick="actionReact('👍')">点赞</button>
+            <button id="btn-dis" class="ctrl-btn" disabled style="border-color:#444;" onclick="actionReact('❌')">异议</button>
             <button id="mic-btn" class="mic-btn" onclick="toggleMic()">🎙️</button>
-            <button class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);">转移</button>
+            <button id="btn-trans" class="ctrl-btn" disabled style="border-color:var(--pink); color:var(--pink);">转移</button>
         </div>
     </div>
 </div>
 
-<button id="host-start-btn" class="pixel-btn" onclick="hostGo()">[ 开启灵魂审判 ]</button>
+<button id="host-start-btn" onclick="hostGo()">[ 开启灵魂审判 ]</button>
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    const qs = ["你最对不起的人是谁？", "描述一个你最恨自己的瞬间。", "如果你有一件隐身衣你最想做什么？", "如果你明天突然消失你最想坦白什么？"];
-    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], handledIds=new Set();
+    const qs = ["最对不起的人？", "最后悔的事？", "最大的恐惧？", "最想坦白的事？"];
+    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], curSpeaker=null, handledIds=new Set();
+    let isLocked = false; 
 
     function restore(t) {
         if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || "";
@@ -134,7 +130,7 @@
 
     function entry(m) {
         myNick = document.getElementById('nick-in').value; myRoom = document.getElementById('room-in').value;
-        if(!myNick || !myRoom) return alert("代号和房号必填");
+        if(!myNick || !myRoom) return alert("必填");
         isComp = (m==='companion'); localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
         document.getElementById('login-screen').style.display='none';
         document.getElementById('main-game').style.display='flex';
@@ -158,7 +154,18 @@
                 const c = peer.connect(`SPEAK-${myRoom}`); setupConn(c);
             }
         });
-        peer.on('connection', (c) => { conns.push(c); setupConn(c); });
+        peer.on('connection', (c) => { 
+            // 房主检查房间锁
+            if(isComp && isLocked) {
+                // 白名单重连逻辑
+                const isReconnecting = players.some(p => p.nick === c.metadata?.nick);
+                if(!isReconnecting) {
+                    setTimeout(() => c.send({type:'REJECTED'}), 500);
+                    return;
+                }
+            }
+            conns.push(c); setupConn(c); 
+        });
         peer.on('call', (call) => {
             call.answer(localStream);
             call.on('stream', (s) => {
@@ -170,53 +177,79 @@
     function setupConn(c) {
         c.on('open', () => c.send({type:'JOIN', nick:myNick, peerId: peer.id}));
         c.on('data', (d) => {
+            if(d.type==='REJECTED') { alert("审判已开启，无法加入新玩家。"); window.location.reload(); }
             if(d.type==='JOIN' && isComp) {
                 if(!players.find(p=>p.peerId===d.peerId)) players.push({nick:d.nick, isComp:false, peerId: d.peerId});
-                sendAll({type:'SYNC', list:players, allIds: players.map(p=>p.peerId)});
+                sendAll({type:'SYNC', list:players, allIds: players.map(p=>p.peerId), locked: isLocked});
             }
             if(d.type==='SYNC') { 
-                players=d.list; renderUI(); 
+                players=d.list; isLocked = d.locked; renderUI(); 
+                if(isLocked) document.getElementById('lock-icon').style.display='inline';
                 d.allIds.forEach(id => {
                     if(id !== peer.id && !handledIds.has(id)) {
                         peer.call(id, localStream); handledIds.add(id);
                     }
                 });
             }
-            if(d.type==='START') document.getElementById('rule-overlay').style.display='flex';
-            if(d.type==='UNLOCK') { document.getElementById('deck').style.display='flex'; renderDeck(); }
-            if(d.type==='DRAW') showCard(d.idx);
+            if(d.type==='START_RULES') document.getElementById('rule-overlay').style.display='flex';
+            if(d.type==='UNLOCK') { document.getElementById('deck').style.display='flex'; renderDeck(); isLocked = true; document.getElementById('lock-icon').style.display='inline'; }
+            if(d.type==='DRAW') { curSpeaker = d.nick; showCard(d.idx); }
             if(d.type==='CLOSE') hideCard();
-            if(d.type==='CHAT') appendChat(d.nick, d.msg);
+            if(d.type==='CHAT') { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); }
         });
     }
 
-    function sendAll(d) { conns.forEach(c=>c.send(d)); if(!isComp && peer) peer.connect(`SPEAK-${myRoom}`).send(d); }
-    function hostGo() { document.getElementById('host-start-btn').style.display='none'; sendAll({type:'START'}); document.getElementById('rule-overlay').style.display='flex'; }
-    function confirmRules() { document.getElementById('rule-overlay').style.display='none'; sendAll({type:'UNLOCK'}); }
+    function sendAll(d) { conns.forEach(c=>c.send(d)); if(!isComp && peer) peer.connect(`SPEAK-${myRoom}`, {metadata:{nick:myNick}}).send(d); }
+    function hostGo() { document.getElementById('host-start-btn').style.display='none'; sendAll({type:'START_RULES'}); document.getElementById('rule-overlay').style.display='flex'; }
+    function confirmRules() { document.getElementById('rule-overlay').style.display='none'; isLocked = true; sendAll({type:'UNLOCK'}); }
 
     function renderUI() {
         const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area');
         pA.innerHTML = ""; cA.innerHTML = "";
         players.forEach(p => {
-            const h = `<div class="p-item"><div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div><div style="font-size:0.55rem;margin-top:5px;color:#999;">${p.nick}</div></div>`;
+            const h = `<div class="p-item ${p.nick===curSpeaker?'active':''}">
+                <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div>
+                <div style="font-size:0.5rem;margin-top:4px;color:#888;">${p.nick}</div>
+            </div>`;
             if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h;
         });
     }
 
     function renderDeck() {
-        let h=""; for(let i=0; i<40; i++) h+=`<div onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:4px solid #555; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px);"></div>`;
+        let h=""; for(let i=0; i<40; i++) h+=`<div onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px);"></div>`;
         document.getElementById('deck').innerHTML = h;
     }
 
-    function handleDraw(i) { if(isComp) return; sendAll({type:'DRAW', idx:i}); showCard(i); }
+    function handleDraw(i) {
+        if(isComp || (curSpeaker && curSpeaker !== myNick)) return;
+        curSpeaker = myNick;
+        sendAll({type:'DRAW', idx:i, nick:myNick});
+        showCard(i);
+    }
+
     function showCard(i) {
         document.getElementById('q-text').innerText = qs[i%qs.length];
         document.getElementById('card-podium').style.display='block';
         const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
+        const isMe = (myNick === curSpeaker);
+        document.getElementById('btn-like').disabled = isMe;
+        document.getElementById('btn-dis').disabled = isMe;
+        document.getElementById('btn-trans').disabled = !isMe;
+        renderUI();
     }
 
-    function userCmd(t) { if(t==='CLOSE') { hideCard(); sendAll({type:'CLOSE'}); } }
+    function userCmd(t) { if(t==='CLOSE') { hideCard(); sendAll({type:'CLOSE'}); curSpeaker = null; renderUI(); } }
     function hideCard() { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); }
+    function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
+    function triggerAnim(e) {
+        for(let i=0; i<10; i++) {
+            const p=document.createElement('div'); p.className='particle'; p.innerText=e;
+            p.style.left='50%'; p.style.top='40%';
+            p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px');
+            document.body.appendChild(p); setTimeout(()=>p.remove(), 800);
+        }
+    }
+
     function say(m) { appendChat(myNick, m); sendAll({type:'CHAT', nick:myNick, msg:m}); }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     function toggleMic() { if(!localStream) return; const a = localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('mic-btn').classList.toggle('active', a); }
