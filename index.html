@@ -3,60 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V46.9</title>
+    <title>SPEAK V47.0</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- 1. 背景动画 --- */
+        /* --- 首页底图动画 (锁定保留) --- */
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.4; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
-        /* --- 2. 登录页 (强制全屏遮盖) --- */
+        /* --- 登录层 --- */
         #login-screen { position: fixed; inset: 0; z-index: 100000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .setup-box { width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; }
-        .balatro-input { padding: 15px; background: rgba(20,20,20,1); border: 2px solid #333; color: var(--gold); text-align: center; font-size: 1rem; border-radius: 4px; }
-        .history-panel { position: absolute; bottom: 40px; left: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100001; }
-        .h-link { font-size: 0.7rem; color: #888; text-decoration: underline; background: none; cursor: pointer; text-align: left; }
-        .run-btn { padding: 18px; background: var(--pink); border: 3px solid #fff; color: #fff; font-weight: 900; font-size: 1.2rem; cursor: pointer; border-radius: 4px; }
+        .balatro-input { padding: 15px; background: #111; border: 2px solid #333; color: var(--gold); text-align: center; font-size: 1rem; }
+        .history-panel { position: absolute; bottom: 40px; left: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .h-link { font-size: 0.65rem; color: #888; text-decoration: underline; background: none; cursor: pointer; text-align: left; }
 
-        /* --- 3. 游戏内容 (默认隐藏) --- */
-        #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; }
+        /* --- 游戏主体 (隐藏态) --- */
+        #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; position: relative; }
 
-        /* --- 4. 弹窗与遮罩 --- */
+        /* --- 弹窗与电量 --- */
         .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.9); }
         .modal { width: 85%; max-width: 320px; background: #eee; color: #111; border: 4px solid #000; border-radius: 12px; padding: 25px; text-align: center; box-shadow: 10px 10px 0 var(--pink); }
+        .battery-box { width: 80px; height: 150px; border: 4px solid #000; margin: 20px auto; position: relative; background: #fff; padding: 3px; }
+        .battery-fill { width: 100%; background: var(--green); position: absolute; bottom: 0; transition: 0.3s; }
 
-        /* --- 5. 游戏组件样式 --- */
-        #status-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; padding: 0 15px; font-weight: 900; font-size: 0.75rem; gap: 8px; }
+        /* --- 布局 --- */
+        #status-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; padding: 0 15px; font-weight: 900; font-size: 0.75rem; }
         .header-bar { height: 110px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
         #player-area { display: flex; gap: 10px; overflow-x: auto; flex: 1; }
         #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; border-left: 1px solid #333; padding-left: 10px; }
-        
         .p-item { display: flex; flex-direction: column; align-items: center; min-width: 55px; }
         .p-avatar { width: 42px; height: 42px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.2rem; }
-        .active .p-avatar { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
         .is-companion { border-color: var(--purple) !important; box-shadow: 0 0 10px var(--purple) !important; }
 
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
-        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
         #focus-board { 
-            position: absolute; height: 68vh; aspect-ratio: 9 / 16; background: #fff; color: #111; border: 5px solid #000; border-radius: 12px;
-            padding: 25px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
-            z-index: 5001; transform: translateY(100%) rotateX(-180deg); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); opacity: 0;
+            position: absolute; height: 68vh; aspect-ratio: 9 / 16; background: #fff; color: #111; border: 5px solid #000; border-radius: 12px; padding: 25px;
+            display: none; flex-direction: column; align-items: center; justify-content: space-between; z-index: 5001; 
+            transform: translateY(100%) rotateX(-180deg); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); opacity: 0;
         }
         #focus-board.show { display: flex; transform: translateY(-5%) rotateX(0deg); opacity: 1; }
+        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 4000; }
 
         .footer { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.75rem; color: var(--blue); }
         .btn-panel { height: 90px; display: flex; padding: 8px; gap: 8px; align-items: center; }
-        .ctrl-btn { flex: 1; height: 50px; background: #111; color: var(--blue); border: 2px solid #blue; border-radius: 4px; font-weight: bold; font-size: 0.75rem; border: 2px solid var(--blue); }
+        .ctrl-btn { flex: 1; height: 50px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.7rem; }
         .mic-btn { border-radius: 50%; width: 66px; height: 66px; flex: none; font-size: 1.5rem; color: #fff; border: 3px solid var(--blue); background: #111; }
         .mic-btn.active { background: var(--pink); border-color: #fff; }
 
-        #host-launch-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; padding: 15px 35px; background: var(--gold); color: #000; font-weight: 900; border-radius: 50px; border: 4px solid #fff; box-shadow: 0 0 20px var(--gold); cursor: pointer; }
+        #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; padding: 15px 40px; background: var(--gold); color: #000; font-weight: 900; border-radius: 50px; border: 4px solid #fff; box-shadow: 0 0 20px var(--gold); }
     </style>
 </head>
 <body>
@@ -68,36 +67,36 @@
     <div class="setup-box">
         <input type="text" id="nick-in" class="balatro-input" placeholder="代号">
         <input type="text" id="room-in" class="balatro-input" placeholder="房号">
-        <button class="run-btn" onclick="startFlow('join')">加入游戏</button>
-        <button class="run-btn" style="background:var(--purple);" onclick="startFlow('companion')">陪伴师入口</button>
+        <button onclick="entry('join')" style="padding:18px; background:var(--pink); color:#fff; font-weight:900; border:3px solid #fff; cursor:pointer;">进入游戏</button>
+        <button onclick="entry('companion')" style="padding:18px; background:var(--purple); color:#fff; font-weight:900; border:3px solid #fff; cursor:pointer; margin-top:10px;">陪伴师入口</button>
     </div>
     <div class="history-panel">
-        <button class="h-link" onclick="restore('nick')">使用旧代号登录</button>
-        <button class="h-link" onclick="restore('room')">回到上个房间</button>
+        <button class="h-link" onclick="restore('nick')">使用旧代号</button>
+        <button class="h-link" onclick="restore('room')">回到房间</button>
     </div>
 </div>
 
-<div id="audio-overlay" class="overlay"><button class="run-btn" style="background:var(--gold); color:#000;" onclick="unlockAll()">同步灵魂频段</button></div>
+<div id="audio-overlay" class="overlay"><button onclick="unlockAudio()" style="padding:20px 40px; background:var(--gold); font-weight:900; border:4px solid #fff; border-radius:50px;">同步灵魂频段</button></div>
 <div id="rule-overlay" class="overlay">
     <div class="modal">
         <h3>- 游戏规则 -</h3>
-        <p style="font-size:0.8rem; margin:20px 0;">陪伴师引导，玩家轮流开启档案。</p>
-        <button class="run-btn" style="width:100%;" onclick="goBatt()">确认并继续</button>
+        <p style="font-size:0.8rem; margin:15px 0;">陪伴师引导，玩家轮流开启档案。</p>
+        <button onclick="openBatt()" style="width:100%; padding:15px; background:var(--pink); color:#fff;">确认并继续</button>
     </div>
 </div>
 <div id="batt-overlay" class="overlay">
     <div class="modal" style="background:#000; color:#fff; border-color:var(--green);">
         <p>当前电量？</p>
         <div id="batt-text" style="font-size:2rem; color:var(--green); font-weight:900;">50%</div>
-        <div style="width: 80px; height: 150px; border: 4px solid #fff; margin: 20px auto; position: relative;"><div id="batt-fill" style="width:100%; background:var(--green); position:absolute; bottom:0; height:50%;"></div></div>
-        <input type="range" min="1" max="100" value="50" oninput="document.getElementById('batt-text').innerText=this.value+'%'; document.getElementById('batt-fill').style.height=this.value+'%'" style="width:100%; accent-color:var(--green);">
-        <button class="run-btn" style="background:var(--green); color:#000; width:100%; margin-top:15px;" onclick="confirmBatt()">确认状态</button>
+        <div class="battery-box"><div id="batt-fill" class="battery-fill" style="height:50%;"></div></div>
+        <input type="range" min="1" max="100" value="50" oninput="updateBattUI(this.value)" style="width:100%; accent-color:var(--green);">
+        <button onclick="sendBatt()" style="width:100%; padding:15px; background:var(--green); color:#000; margin-top:15px;">确认电量</button>
     </div>
 </div>
-<div id="wait-overlay" class="overlay"><div class="modal" style="background:#000; color:var(--gold);"><h2>等待全员标注电量...</h2></div></div>
+<div id="wait-overlay" class="overlay"><div class="modal" style="background:#000; color:var(--gold); border:2px solid var(--gold);"><h2>等待全员标注电量...</h2></div></div>
 
 <div id="main-game">
-    <div id="status-bar"><span>当前频段:</span><span id="room-display" style="background:#000; color:var(--gold); padding:2px 8px; border-radius:4px;">---</span></div>
+    <div id="status-bar"><span>ROOM:</span><span id="room-id-val" style="background:#000; color:var(--gold); margin-left:10px; padding:2px 8px;">---</span></div>
     <div class="header-bar">
         <div id="player-area"></div>
         <div id="companion-area"></div>
@@ -106,8 +105,8 @@
         <div id="card-podium"></div>
         <div id="focus-board">
             <div style="font-size:0.5rem; color:#999;">[ SENSITIVE FILE ]</div>
-            <div id="q-text" style="font-size:1.15rem; font-weight:bold; text-align:center; flex:1; display:flex; align-items:center;"></div>
-            <button class="ctrl-btn" style="width:100%; border-color:var(--gold); color:var(--gold);" onclick="userCmd('CLOSE')">完成回答</button>
+            <div id="q-text" style="font-size:1.15rem; font-weight:bold; text-align:center; flex:1; display:flex; align-items:center;">内容加载中...</div>
+            <button class="ctrl-btn" style="width:100%; border-color:var(--gold); color:var(--gold);" onclick="closeCard()">完成回答</button>
         </div>
         <div id="deck" style="display:none; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
     </div>
@@ -122,40 +121,40 @@
     </div>
 </div>
 
-<button id="host-launch-btn" onclick="hostCmd('START_FLOW')">[ 开启灵魂审判 ]</button>
+<button id="host-start-btn" onclick="hostGo()">[ 开启灵魂审判 ]</button>
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    const qs = ["你最对不起谁？", "如果你有一件隐身衣...", "此时最焦虑什么？", "如果明天消失..."];
+    const qs = ["你觉得最对不起谁？", "描述一个最恨自己的瞬间。", "如果你有一件隐身衣...", "明天消失你最想坦白什么？"];
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[];
 
-    function restore(t) { 
-        if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('s_n') || "";
-        if(t==='room') document.getElementById('room-in').value = localStorage.getItem('s_r') || "";
+    function restore(t) {
+        if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || "";
+        if(t==='room') document.getElementById('room-in').value = localStorage.getItem('sr') || "";
     }
 
-    function startFlow(m) {
+    function entry(m) {
         myNick = document.getElementById('nick-in').value; myRoom = document.getElementById('room-in').value;
-        if(!myNick || !myRoom) return alert("必填代号房号");
-        isComp = (m==='companion'); localStorage.setItem('s_n', myNick); localStorage.setItem('s_r', myRoom);
+        if(!myNick || !myRoom) return alert("代号房号必填");
+        isComp = (m==='companion'); localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
         document.getElementById('login-screen').style.display='none';
         document.getElementById('main-game').style.display='flex';
         document.getElementById('audio-overlay').style.display='flex';
     }
 
-    async function unlockAll() {
+    async function unlockAudio() {
         try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) {}
         document.getElementById('audio-overlay').style.display='none';
-        initNetwork();
+        initPeer();
     }
 
-    function initNetwork() {
+    function initPeer() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null);
         peer.on('open', (id) => {
-            document.getElementById('room-display').innerText = myRoom;
+            document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
                 players = [{nick:myNick, isComp:true, batt:'-'}]; renderUI();
-                document.getElementById('host-launch-btn').style.display='block';
+                document.getElementById('host-start-btn').style.display='block';
             } else {
                 const c = peer.connect(`SPEAK-${myRoom}`); setupConn(c);
             }
@@ -171,12 +170,18 @@
                 sendAll({type:'SYNC', list:players});
             }
             if(d.type==='SYNC') { players=d.list; renderUI(); }
-            if(d.type==='START_FLOW') document.getElementById('rule-overlay').style.display='flex';
-            if(d.type==='BATT_DONE') {
-                players.find(p=>p.nick===d.nick).batt=d.val; renderUI();
-                if(isComp && players.filter(p=>!p.isComp).every(p=>p.batt!=='')) sendAll({type:'READY'});
+            if(d.type==='FLOW') document.getElementById('rule-overlay').style.display='flex';
+            if(d.type==='BATT_READY') {
+                const target = players.find(p=>p.nick===d.nick);
+                if(target) target.batt = d.val;
+                renderUI();
+                // 核心逻辑修复：房主检查所有普通玩家
+                if(isComp) {
+                    const others = players.filter(p=>!p.isComp);
+                    if(others.length > 0 && others.every(p=>p.batt!=='')) sendAll({type:'UNLOCK'});
+                }
             }
-            if(d.type==='READY') {
+            if(d.type==='UNLOCK') {
                 document.getElementById('wait-overlay').style.display='none';
                 document.getElementById('deck').style.display='flex';
                 renderDeck();
@@ -186,13 +191,14 @@
     }
 
     function sendAll(d) { conns.forEach(c=>c.send(d)); if(!isComp && peer) peer.connect(`SPEAK-${myRoom}`).send(d); }
-    function hostCmd(t) { if(isComp) sendAll({type:t}); document.getElementById('host-launch-btn').style.display='none'; document.getElementById('rule-overlay').style.display='flex'; }
-    function goBatt() { document.getElementById('rule-overlay').style.display='none'; document.getElementById('batt-overlay').style.display='flex'; }
-    function confirmBatt() {
+    function hostGo() { document.getElementById('host-start-btn').style.display='none'; sendAll({type:'FLOW'}); document.getElementById('rule-overlay').style.display='flex'; }
+    function openBatt() { document.getElementById('rule-overlay').style.display='none'; document.getElementById('batt-overlay').style.display='flex'; }
+    function updateBattUI(v) { document.getElementById('batt-text').innerText=v+'%'; document.getElementById('batt-fill').style.height=v+'%'; }
+    function sendBatt() {
         document.getElementById('batt-overlay').style.display='none';
         if(!isComp) {
             document.getElementById('wait-overlay').style.display='flex';
-            sendAll({type:'BATT_DONE', nick:myNick, val:document.getElementById('batt-text').innerText});
+            sendAll({type:'BATT_READY', nick:myNick, val:document.getElementById('batt-text').innerText});
         } else { players[0].batt = '-'; renderUI(); }
     }
 
@@ -200,7 +206,7 @@
         const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area');
         pA.innerHTML = ""; cA.innerHTML = "";
         players.forEach(p => {
-            const h = `<div class="p-item"><div class="p-batt-val" style="color:var(--green);font-size:0.6rem;">${p.batt}</div><div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div><div style="font-size:0.5rem;margin-top:4px;color:#888;">${p.nick}</div></div>`;
+            const h = `<div class="p-item"><div class="p-batt-val" style="color:var(--green);font-size:0.6rem;">${p.batt}</div><div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div><div style="font-size:0.5rem;margin-top:4px;">${p.nick}</div></div>`;
             if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h;
         });
     }
@@ -214,11 +220,14 @@
         if(isComp) return;
         document.getElementById('q-text').innerText = qs[i%qs.length];
         document.getElementById('card-podium').style.display='block';
-        const b = document.getElementById('focus-board');
-        b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
+        const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
     }
 
-    function userCmd(t) { if(t==='CLOSE') { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); } }
+    function closeCard() { 
+        document.getElementById('focus-board').classList.remove('show'); 
+        setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); 
+    }
+
     function say(m) { appendChat(myNick, m); sendAll({type:'CHAT', nick:myNick, msg:m}); }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     function toggleMic() { if(!localStream) return; const a = localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('mic-btn').classList.toggle('active', a); }
