@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - 真人实测</title>
+    <title>SPEAK - V46.1</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; }
@@ -19,38 +19,45 @@
         #status-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; padding: 0 15px; font-weight: 900; font-size: 0.75rem; gap: 8px; z-index: 10000; }
         .room-tag { background: #000; color: var(--gold); padding: 2px 8px; border-radius: 4px; }
 
-        /* --- 登录重连 --- */
-        .history-box { position: absolute; bottom: 30px; left: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .history-btn { font-size: 0.6rem; color: #666; text-decoration: underline; background: none; cursor: pointer; text-align: left; }
-
         /* --- 玩家头像栏 --- */
-        .player-bar { height: 100px; padding: 10px; display: flex; gap: 12px; background: rgba(0,0,0,0.9); border-bottom: 1px solid #222; overflow-x: auto; flex-shrink: 0; }
-        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; transition: 0.3s; opacity: 1; }
-        .p-avatar { width: 44px; height: 44px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.2rem; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .player-bar { height: 90px; padding: 10px; display: flex; gap: 12px; background: rgba(0,0,0,0.9); border-bottom: 1px solid #222; overflow-x: auto; flex-shrink: 0; }
+        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+        .p-avatar { width: 42px; height: 42px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1rem; position: relative; }
         .p-avatar.is-companion { border-color: var(--purple); box-shadow: 0 0 10px var(--purple); }
+        .online-dot { position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; background: var(--green); border-radius: 50%; border: 2px solid #000; }
 
-        /* --- 抽牌舞台 --- */
+        /* --- 核心修复：16:9 竖版档案卡 --- */
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
-        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 4000; }
+        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
+        
         #focus-board { 
-            position: absolute; width: 75%; aspect-ratio: 9 / 16; background: #fff; color: #111; border: 4px solid #000; 
-            border-radius: 12px; padding: 25px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
+            position: absolute; 
+            width: auto; height: 70vh; /* 锁定视口高度的 70% */
+            aspect-ratio: 9 / 16; /* 严格比例 */
+            background: #fff; color: #111; border: 5px solid #000; border-radius: 12px; 
+            padding: 30px 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
             z-index: 5001; box-shadow: 20px 20px 0 rgba(0,0,0,0.6);
-            transform: translateY(100%) rotateX(-180deg) scale(0.4);
+            transform: translateY(100%) rotateX(-180deg);
             transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s; opacity: 0;
         }
-        #focus-board.show { display: flex; transform: translateY(-5%) rotateX(0deg) scale(1); opacity: 1; }
+        #focus-board.show { display: flex; transform: translateY(-5%) rotateX(0deg); opacity: 1; }
+
+        /* --- 卡池滑动：通过 visibility 解决手机端同步延迟 --- */
+        #deck { 
+            display: flex; gap: 12px; padding: 20px; width: 100%; overflow-x: auto;
+            visibility: hidden; opacity: 0; transition: 0.5s; 
+        }
+        #deck.active { visibility: visible; opacity: 1; }
+        .poker-card { flex: 0 0 100px; height: 178px; background: #2a104a; border: 2px solid #555; border-radius: 6px; }
 
         /* --- 操作控制 --- */
         .footer { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.75rem; color: var(--blue); }
-        .btn-panel { height: 90px; display: flex; padding: 8px; gap: 10px; align-items: center; }
-        .ctrl-btn { flex: 1; height: 55px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
-        .mic { border-radius: 50%; width: 70px; height: 70px; flex: none; font-size: 1.8rem; color: #fff; border: 3px solid var(--blue); }
-        .ctrl-btn.pink { border-color: var(--pink); color: var(--pink); }
+        .btn-panel { height: 90px; display: flex; padding: 8px; gap: 8px; align-items: center; }
+        .ctrl-btn { flex: 1; height: 55px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.7rem; }
+        .ctrl-btn.mic { border-radius: 50%; width: 70px; height: 70px; flex: none; font-size: 1.8rem; color: #fff; border: 3px solid var(--blue); }
 
-        /* 房主开启审判 */
+        /* 房主开启控制 */
         #host-start-trigger { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 6000; display: none; padding: 15px 30px; background: var(--gold); color: #000; font-weight: 900; border-radius: 50px; border: 4px solid #fff; box-shadow: 0 0 20px var(--gold); }
     </style>
 </head>
@@ -60,21 +67,17 @@
     <div class="plasma-bg"></div>
     <div style="font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 40px;">SPEAK</div>
     <div style="width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 15px;">
-        <input type="text" id="nick-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="你的代号">
+        <input type="text" id="nick-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="输入代号">
         <input type="text" id="room-in" maxlength="6" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="6位房号">
-        <button class="run-btn" style="width:100%; padding:18px; background:var(--pink); color:#fff; font-weight:900; border:3px solid #fff; cursor:pointer;" onclick="connect('player')">加入房间</button>
-        <button class="run-btn" style="width:100%; padding:18px; background:var(--purple); color:#fff; font-weight:900; border:3px solid #fff; cursor:pointer; margin-top:10px;" onclick="connect('companion')">陪伴师入口</button>
-    </div>
-    <div class="history-box">
-        <button class="history-btn" onclick="document.getElementById('nick-in').value = localStorage.getItem('s_nick') || ''">使用旧名登录</button>
-        <button class="history-btn" onclick="document.getElementById('room-in').value = localStorage.getItem('s_room') || ''">回到上个房间</button>
+        <button class="ctrl-btn" style="width:100%; padding:18px; background:var(--pink); color:#fff; font-weight:900; border:3px solid #fff;" onclick="connect('player')">加入房间</button>
+        <button class="ctrl-btn" style="width:100%; padding:18px; background:var(--purple); color:#fff; font-weight:900; border:3px solid #fff; margin-top:10px;" onclick="connect('companion')">陪伴师入口</button>
     </div>
 </div>
 
 <button id="host-start-trigger" onclick="hostLaunch()">[ 开启灵魂审判 ]</button>
 
 <div id="status-bar" style="display:none;">
-    <span>当前频段:</span>
+    <span>频段 ID:</span>
     <span id="room-id-tag" class="room-tag">------</span>
 </div>
 
@@ -83,11 +86,11 @@
 <div class="stage">
     <div id="card-podium"></div>
     <div id="focus-board">
-        <div style="font-size:0.55rem; color:#999;">[ SENSITIVE FILE ]</div>
-        <div id="q-text" style="font-size:1.15rem; font-weight:bold; text-align:center; flex:1; display:flex; align-items:center;"></div>
+        <div style="font-size:0.6rem; color:#999; border-bottom:1px solid #ddd; width:100%; text-align:center; padding-bottom:5px;">[ SENSITIVE FILE ]</div>
+        <div id="q-text" style="font-size:1.1rem; font-weight:bold; text-align:center; flex:1; display:flex; align-items:center;">内容加载中...</div>
         <button class="ctrl-btn" style="width:100%; height:44px; border-color:var(--gold); color:var(--gold);" onclick="closeCard()">我已回答完毕</button>
     </div>
-    <div id="deck" style="display:flex; gap:12px; overflow-x:auto; padding:20px; width:100%; display:none;"></div>
+    <div id="deck"></div>
 </div>
 
 <div class="footer">
@@ -95,25 +98,21 @@
     <div class="btn-panel">
         <button class="ctrl-btn" onclick="talk('👍')">点赞</button>
         <button class="ctrl-btn" style="border-color:#444;" onclick="talk('❌')">反对</button>
-        <button id="mic-btn" class="ctrl-btn mic" onclick="this.classList.toggle('active')">🎙️</button>
-        <button class="ctrl-btn pink" onclick="talk('🔄 发起转移！')">🔄 转移</button>
+        <button class="ctrl-btn mic" onclick="this.classList.toggle('active')">🎙️</button>
+        <button class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);">转移</button>
     </div>
 </div>
 
 <script>
-    const qs = ["你觉得这辈子最对不起的人是谁？", "如果你有一件隐身衣你想去做什么？", "你此时此刻最大的焦虑源头是什么？", "明天公司倒闭，你是恐慌还是解脱？"];
-    let peer, conn, myNick, myRoom, isCompanion = false, players = [], flipped = [];
+    const qs = ["你上一次哭是因为什么？", "如果你有一件隐身衣你想去做什么？", "描述一个你最恨自己的瞬间。", "明天公司倒闭，你长舒一口气还是恐慌？"];
+    let peer, conn, myNick, myRoom, isCompanion = false, players = [];
 
     function connect(mode) {
         myNick = document.getElementById('nick-in').value || "ANON";
         myRoom = document.getElementById('room-in').value;
         if(!myRoom) return alert("请输入房号");
         
-        localStorage.setItem('s_nick', myNick);
-        localStorage.setItem('s_room', myRoom);
         isCompanion = (mode === 'companion');
-
-        // 初始化 PeerJS
         peer = new Peer(isCompanion ? `SPEAK-${myRoom}` : null);
 
         peer.on('open', (id) => {
@@ -143,15 +142,18 @@
         conn.on('data', (data) => {
             if(data.type === 'JOIN') {
                 updatePList(data.nick, false);
-                if(isCompanion) conn.send({type: 'PEER_DATA', players: players});
+                if(isCompanion) conn.send({type: 'SYNC_ALL', players: players});
             }
-            if(data.type === 'PEER_DATA') {
+            if(data.type === 'SYNC_ALL') {
                 players = data.players;
                 renderPlayers();
             }
             if(data.type === 'START_GAME') {
-                document.getElementById('deck').style.display = 'flex';
-                appendChat("系统", "陪伴师开启了灵魂审判，卡池已解锁。");
+                document.getElementById('deck').classList.add('active');
+                appendChat("系统", "陪伴师开启了灵魂审判，档案室已解锁。");
+            }
+            if(data.type === 'DRAW_CARD') {
+                showCard(data.index);
             }
             if(data.type === 'CHAT') appendChat(data.nick, data.msg);
         });
@@ -159,9 +161,9 @@
 
     function hostLaunch() {
         document.getElementById('host-start-trigger').style.display = 'none';
-        document.getElementById('deck').style.display = 'flex';
-        conn.send({type: 'START_GAME'});
-        appendChat("系统", "您已开启全员卡池。");
+        document.getElementById('deck').classList.add('active');
+        if(conn) conn.send({type: 'START_GAME'});
+        appendChat("系统", "已开启全员卡池同步。");
     }
 
     function updatePList(nick, comp) {
@@ -172,7 +174,7 @@
     function renderPlayers() {
         document.getElementById('p-bar').innerHTML = players.map(p => `
             <div class="p-item">
-                <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div>
+                <div class="p-avatar ${p.isComp?'is-companion':''}">🃏<div class="online-dot"></div></div>
                 <div style="font-size:0.5rem; margin-top:4px;">${p.nick}</div>
             </div>
         `).join('');
@@ -180,14 +182,19 @@
 
     function renderDeck() {
         let h = "";
-        for(let i=0; i<40; i++) h += `<div onclick="draw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:6px;"></div>`;
+        for(let i=0; i<40; i++) h += `<div class="poker-card" onclick="handleDraw(${i})"></div>`;
         document.getElementById('deck').innerHTML = h;
     }
 
-    function draw(i) {
+    function handleDraw(i) {
         if(isCompanion) return;
+        showCard(i);
+        if(conn) conn.send({type: 'DRAW_CARD', index: i});
+    }
+
+    function showCard(i) {
         const board = document.getElementById('focus-board');
-        document.getElementById('q-text').innerText = qs[Math.floor(Math.random()*qs.length)];
+        document.getElementById('q-text').innerText = qs[i % qs.length];
         document.getElementById('card-podium').style.display = 'block';
         board.style.display = 'flex';
         setTimeout(() => board.classList.add('show'), 50);
@@ -213,7 +220,7 @@
         b.scrollTop = b.scrollHeight;
     }
 
-    renderDeck(); // 初始化卡池模板
+    renderDeck();
 </script>
 </body>
 </html>
