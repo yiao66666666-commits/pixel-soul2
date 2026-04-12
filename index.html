@@ -3,206 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - V45.0</title>
+    <title>SPEAK - 实战内测</title>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; --dark: #000; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- Balatro 风格登录页 --- */
+        /* --- 登录页：Balatro 迷幻质感 --- */
         #login-screen { position: fixed; inset: 0; z-index: 50000; background: radial-gradient(circle at center, #1a0826 0%, #050505 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .plasma-bg { position: absolute; inset: 0; z-index: -1; opacity: 0.3; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
-        .balatro-title { font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink), -2px -2px 0 var(--blue); margin-bottom: 30px; }
+        .title { font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink), -2px -2px 0 var(--blue); margin-bottom: 40px; letter-spacing: -3px; }
         .setup-box { width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; }
-        .balatro-input { width: 100%; padding: 12px; background: #000; border: 2px solid #333; color: var(--gold); text-align: center; font-family: inherit; font-size: 1rem; }
-        .balatro-input:focus { border-color: var(--gold); }
+        .balatro-input { width: 100%; padding: 14px; background: #000; border: 2px solid #333; color: var(--gold); text-align: center; font-family: inherit; font-size: 1.1rem; outline: none; }
+        .run-btn { width: 100%; padding: 16px; background: var(--pink); border: 3px solid #fff; color: #fff; font-size: 1.3rem; font-weight: 900; box-shadow: 6px 6px 0 #000; cursor: pointer; }
         
-        .run-btn { width: 100%; padding: 15px; background: var(--pink); border: 3px solid #fff; color: #fff; font-size: 1.2rem; font-weight: 900; box-shadow: 4px 4px 0 #000; cursor: pointer; }
-        
-        /* 陪伴师入口与重连 */
         .bottom-links { position: absolute; bottom: 30px; width: 100%; padding: 0 20px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .rejoin-box { display: flex; flex-direction: column; gap: 8px; }
-        .link-btn { font-size: 0.6rem; color: #666; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: inherit; }
-        .companion-btn { color: var(--purple); font-weight: bold; border: 1px solid var(--purple); padding: 5px 10px; text-decoration: none; }
+        .link-btn { font-size: 0.65rem; color: #666; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: inherit; }
+        .companion-link { color: var(--purple); font-weight: bold; border: 1px solid var(--purple); padding: 5px 12px; }
 
-        /* --- 游戏主界面 --- */
-        #guide-bar { height: 32px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem; }
-        .player-bar { height: 80px; padding: 10px; display: flex; gap: 12px; background: var(--dark); border-bottom: 2px solid #222; overflow-x: auto; }
-        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 50px; opacity: 0.4; transition: 0.3s; }
+        /* --- 主界面布局 --- */
+        #status-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem; gap: 8px; }
+        .copy-btn { background: #000; color: var(--gold); padding: 1px 6px; font-size: 0.6rem; border: 1px solid var(--gold); cursor: pointer; }
+
+        .player-bar { height: 85px; padding: 10px; display: flex; gap: 12px; background: var(--dark); border-bottom: 2px solid #222; overflow-x: auto; }
+        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 55px; opacity: 0.4; transition: 0.3s; }
         .p-item.active { opacity: 1; transform: scale(1.1); }
-        .p-avatar { width: 40px; height: 40px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.2rem; }
+        .p-avatar { width: 44px; height: 44px; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.2rem; }
         .active .p-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .p-avatar.is-companion { border-color: var(--purple); box-shadow: 0 0 10px var(--purple); }
+        .p-avatar.companion { border-color: var(--purple); box-shadow: 0 0 10px var(--purple); }
 
-        /* 16:9 竖版卡片滑动 */
+        /* 卡牌：16:9 黄金比例 */
         .stage { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; justify-content: center; }
-        .deck-scroll { display: flex; gap: 15px; padding: 20px; overflow-x: scroll; scroll-snap-type: x mandatory; }
+        .deck-scroll { display: flex; gap: 16px; padding: 20px 30px; overflow-x: scroll; scroll-snap-type: x mandatory; }
         .deck-scroll::-webkit-scrollbar { display: none; }
         .poker-card { 
-            flex: 0 0 100px; height: 178px; /* 严格 16:9 比例 */
-            background: #2a104a; border-radius: 6px; border: 2px solid rgba(255,255,255,0.2); 
-            scroll-snap-align: center; background-image: repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px);
+            flex: 0 0 105px; height: 186px; 
+            background: #2a104a; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); 
+            scroll-snap-align: center; background-image: repeating-linear-gradient(45deg, #3d1563, #3d1563 10px, #2a104a 10px, #2a104a 20px);
         }
         .poker-card.flipped { opacity: 0.05; pointer-events: none; }
 
-        /* 问题面板 */
-        #focus-board { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 88%; background: #fff; color: #111; border: 4px solid #000; padding: 20px; display: none; z-index: 3000; box-shadow: 10px 10px 0 #000; }
-        #q-text { font-size: 1rem; font-weight: bold; text-align: center; margin-bottom: 15px; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+        #focus-board { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); width: 85%; background: #fff; color: #111; border: 4px solid #000; padding: 20px; display: none; z-index: 3000; box-shadow: 12px 12px 0 #000; }
+        #q-text { font-size: 1.1rem; font-weight: bold; text-align: center; min-height: 80px; display: flex; align-items: center; justify-content: center; line-height: 1.6; }
 
-        /* 底部操作 */
-        .footer-console { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); border-bottom: 1px solid #222; }
-        .input-row { height: 40px; background: #111; display: flex; }
-        #c-in { flex: 1; background: transparent; border: none; color: #fff; padding: 0 15px; font-family: inherit; font-size: 0.8rem; }
-        .btn-panel { height: 90px; display: flex; padding: 8px; gap: 6px; align-items: center; }
-        .ctrl-btn { flex: 1; height: 55px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.6rem; }
-        .ctrl-btn.mic { border-radius: 50%; width: 66px; height: 66px; flex: none; font-size: 1.5rem; color: #fff; }
-        .ctrl-btn.mic.on { background: var(--pink); border-color: #fff; box-shadow: 0 0 20px var(--pink); }
+        /* 聊天与控制 */
+        .footer { height: 280px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
+        #chat-flow { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; color: var(--blue); border-bottom: 1px solid #222; }
+        .chat-input { height: 42px; display: flex; background: #111; border-bottom: 1px solid #222; }
+        #chat-in { flex: 1; background: transparent; border: none; color: #fff; padding: 0 15px; font-family: inherit; font-size: 0.85rem; outline: none; }
+        
+        .btn-panel { height: 100px; display: flex; padding: 10px; gap: 8px; align-items: center; }
+        .ctrl-btn { flex: 1; height: 60px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 6px; font-weight: bold; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .ctrl-btn.mic { border-radius: 50%; width: 72px; height: 72px; flex: none; font-size: 1.8rem; color: #fff; }
+        .ctrl-btn.mic.active { background: var(--pink); border-color: #fff; box-shadow: 0 0 20px var(--pink); }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
     <div class="plasma-bg"></div>
-    <div class="balatro-title">SPEAK</div>
-    
+    <div class="title">SPEAK</div>
     <div class="setup-box">
-        <input type="text" id="nick-in" class="balatro-input" placeholder="输入你的名称" autocomplete="off">
-        <input type="text" id="room-in" class="balatro-input" placeholder="输入6位房间号" autocomplete="off">
-        <button class="run-btn" onclick="startGame('join')">进入游戏</button>
+        <input type="text" id="nick-in" class="balatro-input" placeholder="代号" autocomplete="off">
+        <input type="text" id="room-in" class="balatro-input" placeholder="房号" autocomplete="off">
+        <button class="run-btn" onclick="init('player')">RUN GAME</button>
     </div>
-
     <div class="bottom-links">
-        <div class="rejoin-box">
-            <button class="link-btn" onclick="useLastInfo()">使用旧名称登录</button>
-            <button class="link-btn" onclick="rejoinLastRoom()">回到上个房间</button>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="link-btn" onclick="restore('nick')">使用旧名登录</button>
+            <button class="link-btn" onclick="restore('room')">回到房间</button>
         </div>
-        <button class="link-btn companion-btn" onclick="startGame('host')">陪伴师/房主入口</button>
+        <button class="link-btn companion-link" onclick="init('companion')">陪伴师入口</button>
     </div>
 </div>
 
-<div id="guide-bar">>>> 等待档案开启</div>
+<div id="status-bar">
+    <span id="guide-msg">>>> 系统启动</span>
+    <div id="room-id-box" style="display:none; align-items:center; gap:5px; margin-left: 10px;">
+        <span style="color:#000;">ID:</span>
+        <span id="cur-room-id" style="color:#000; font-weight:bold;">------</span>
+        <div class="copy-btn" onclick="copyID()">复制</div>
+    </div>
+</div>
+
 <div class="player-bar" id="p-bar"></div>
 
 <div class="stage">
     <div id="focus-board">
-        <div style="font-size:0.5rem; color:#999; text-align:center;">[ ARCHIVE OPEN ]</div>
+        <div style="font-size:0.5rem; color:#999; text-align:center; border-bottom:1px solid #ddd; margin-bottom:10px;">[ FILE OPEN ]</div>
         <div id="q-text">档案内容...</div>
-        <button class="ctrl-btn" id="close-btn" style="width:100%; height:40px; margin-top:10px; border-color:var(--gold); color:var(--gold);" onclick="nextTurn()">关闭档案</button>
+        <button class="ctrl-btn" style="width:100%; height:44px; margin-top:10px; border-color:var(--gold); color:var(--gold);" onclick="next()">关闭并继续</button>
     </div>
     <div class="deck-scroll" id="deck"></div>
 </div>
 
-<div class="footer-console">
-    <div id="c-msgs"></div>
-    <div class="input-row">
-        <input type="text" id="c-in" placeholder="输入吐槽..." onkeypress="if(event.keyCode==13) sendChat()">
+<div class="footer">
+    <div id="chat-flow"></div>
+    <div class="chat-input">
+        <input type="text" id="chat-in" placeholder="输入吐槽或提问..." onkeypress="if(event.keyCode==13) sendMsg()">
     </div>
     <div class="btn-panel">
-        <button class="ctrl-btn" onclick="sendEmoji('👍')">点赞</button>
-        <button class="ctrl-btn" style="border-color:#444;" onclick="sendEmoji('❌')">不同意</button>
+        <button class="ctrl-btn" onclick="reaction('👍')">点赞</button>
+        <button class="ctrl-btn" style="border-color:#444;" onclick="reaction('❌')">不同意</button>
         <button id="mic-btn" class="ctrl-btn mic" onclick="toggleMic()">🎙️</button>
         <button class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);">转移</button>
-        <button class="ctrl-btn" onclick="nextTurn()">跳过</button>
+        <button class="ctrl-btn" onclick="next()">跳过</button>
     </div>
 </div>
 
 <script>
-    const questions = ["你上一次哭是因为什么？", "如果你有一件隐身衣你想去做什么？", "明天公司倒闭，你是恐慌还是解脱？", "此时此刻最大的焦虑源头是什么？"];
-    let players = [], turnIdx = 0, flipped = [], isMicOn = false, myRole = 'player';
+    const qs = ["你觉得这辈子最对不起的人是谁？为什么？", "如果你有一件隐身衣，你最想去做什么？", "如果工资减半但每天准时5点下班且没人找你，你会换吗？", "你现在极度怀念却再也找不到的一种感觉是什么？"];
+    let players = [], turnIdx = 0, flipped = [], isMicOn = false, role = 'player';
 
-    // 登录与本地存储逻辑
-    function useLastInfo() {
-        const lastNick = localStorage.getItem('speak_nick');
-        if(lastNick) document.getElementById('nick-in').value = lastNick;
+    function restore(type) {
+        if(type==='nick') document.getElementById('nick-in').value = localStorage.getItem('s_nick') || "";
+        if(type==='room') document.getElementById('room-in').value = localStorage.getItem('s_room') || "";
     }
 
-    function rejoinLastRoom() {
-        const lastRoom = localStorage.getItem('speak_room');
-        if(lastRoom) document.getElementById('room-in').value = lastRoom;
-    }
-
-    function startGame(role) {
+    function init(m) {
+        role = m;
         const nick = document.getElementById('nick-in').value || "ANON";
-        const room = document.getElementById('room-in').value || "888888";
-        myRole = role;
+        let room = document.getElementById('room-in').value;
 
-        // 存储信息
-        localStorage.setItem('speak_nick', nick);
-        localStorage.setItem('speak_room', room);
+        if(role === 'companion') {
+            room = Math.floor(100000 + Math.random() * 900000).toString();
+            players = [{nick: nick, avatar: '🧿', isComp: true}];
+            document.getElementById('guide-msg').innerText = ">>> 陪伴师已就位";
+        } else {
+            if(!room) { alert("请输入房号"); return; }
+            players = [{nick: nick, avatar: '🃏', isComp: false}];
+            document.getElementById('guide-msg').innerText = ">>> 等待抽牌";
+        }
 
+        localStorage.setItem('s_nick', nick);
+        localStorage.setItem('s_room', room);
+        document.getElementById('cur-room-id').innerText = room;
+        document.getElementById('room-id-box').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
         
-        // 房主/陪伴师初始化
-        if(role === 'host') {
-            players = [{nick: nick, avatar: '🧿', isCompanion: true}];
-            setGuide("你是房主/陪伴师：等待参与者加入...");
-            appendChat("系统", "陪伴师已就位，拥有最高发言权。");
-        } else {
-            players = [{nick: nick, avatar: '🃏', isCompanion: false}];
-            setGuide("已加入房间：" + room);
-        }
-        renderPlayers();
-        renderDeck();
+        renderP(); renderD();
     }
 
-    function renderPlayers() {
+    function copyID() {
+        navigator.clipboard.writeText(document.getElementById('cur-room-id').innerText);
+        const b = document.querySelector('.copy-btn');
+        b.innerText = "已复制"; setTimeout(() => b.innerText = "复制", 2000);
+    }
+
+    function renderP() {
         document.getElementById('p-bar').innerHTML = players.map((p, i) => `
             <div class="p-item ${i===turnIdx?'active':''}">
-                <div class="p-avatar ${p.isCompanion?'is-companion':''}">${p.avatar}</div>
-                <div style="font-size:0.5rem; margin-top:4px;">${p.nick}</div>
+                <div class="p-avatar ${p.isComp?'companion':''}">${p.avatar}</div>
+                <div class="name">${p.nick}</div>
             </div>
         `).join('');
     }
 
-    function renderDeck() {
-        let d = document.getElementById('deck'); d.innerHTML = "";
-        for(let i=0; i<40; i++) d.innerHTML += `<div class="poker-card ${flipped.includes(i)?'flipped':''}" onclick="draw(${i})"></div>`;
+    function renderD() {
+        let h = "";
+        for(let i=0; i<40; i++) h += `<div class="poker-card ${flipped.includes(i)?'flipped':''}" onclick="tap(${i})"></div>`;
+        document.getElementById('deck').innerHTML = h;
     }
 
-    function draw(i) {
-        if(myRole === 'host') {
-            appendChat("系统", "陪伴师不参与抽卡，请引导玩家。");
-            return;
-        }
-        if(flipped.includes(i)) return;
+    function tap(i) {
+        if(role==='companion' || flipped.includes(i)) return;
         flipped.push(i);
-        document.getElementById('q-text').innerText = questions[Math.floor(Math.random()*questions.length)];
+        document.getElementById('q-text').innerText = qs[Math.floor(Math.random()*qs.length)];
         document.getElementById('focus-board').style.display = 'flex';
-        renderDeck();
+        renderD();
     }
 
     function toggleMic() {
         isMicOn = !isMicOn;
-        document.getElementById('mic-btn').classList.toggle('on', isMicOn);
-        setGuide(isMicOn ? "麦克风已开启" : "麦克风已静音");
+        document.getElementById('mic-btn').classList.toggle('active', isMicOn);
     }
 
-    function sendChat() {
-        let i = document.getElementById('c-in'); if(!i.value) return;
-        appendChat(localStorage.getItem('speak_nick'), i.value); i.value = "";
+    function sendMsg() {
+        let i = document.getElementById('chat-in'); if(!i.value) return;
+        let b = document.getElementById('chat-flow');
+        b.innerHTML += `<div><span style="color:var(--gold)">${localStorage.getItem('s_nick')}:</span> ${i.value}</div>`;
+        b.scrollTop = b.scrollHeight; i.value = "";
     }
 
-    function appendChat(n, m) {
-        let b = document.getElementById('c-msgs');
-        b.innerHTML += `<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`;
-        b.scrollTop = b.scrollHeight;
-    }
-
-    function nextTurn() {
+    function next() {
         document.getElementById('focus-board').style.display = 'none';
         turnIdx = (turnIdx + 1) % players.length;
-        // 自动跳过陪伴师的抽卡回合
-        if(players[turnIdx].isCompanion) {
-            turnIdx = (turnIdx + 1) % players.length;
-        }
-        renderPlayers();
+        if(players[turnIdx]?.isComp) turnIdx = (turnIdx + 1) % players.length;
+        renderP();
     }
 
-    function sendEmoji(e) { appendChat("系统", `收到评价: ${e}`); }
+    function reaction(e) { 
+        let b = document.getElementById('chat-flow');
+        b.innerHTML += `<div style="color:var(--pink)">>>> 评价: ${e}</div>`;
+        b.scrollTop = b.scrollHeight;
+    }
 </script>
 </body>
 </html>
