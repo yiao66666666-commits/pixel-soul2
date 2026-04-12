@@ -3,298 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PIXEL SOUL V44.1.2 - 像素酒馆</title>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <title>陌语 - 午夜圆桌测试版</title>
     <style>
-        :root { --bg: #13061c; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; --dark: #0a0310; }
-        * { image-rendering: pixelated; box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        :root { --bg: #0d0907; --wood: #2a1810; --gold: #f9a826; --light: #eaddcf; }
+        body { background: var(--bg); color: var(--light); font-family: "PingFang SC"; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
         
-        body {
-            background: var(--bg); color: #fff; font-family: "Courier New", monospace;
-            display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
-            background-size: 100% 4px, 4px 100%;
-        }
-
-        /* 陪伴师专属介入特效 - 硬核像素故障感 */
-        #companion-notice { 
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 15000; 
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: none; backdrop-filter: blur(4px);
-        }
-        .comp-override-box {
-            border: 4px solid var(--purple); padding: 20px 40px; background: rgba(163, 51, 255, 0.1);
-            color: var(--purple); font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 10px var(--purple);
-            box-shadow: inset 0 0 20px rgba(163, 51, 255, 0.5), 0 0 30px rgba(163, 51, 255, 0.3);
-            animation: glitch-anim 0.2s infinite; letter-spacing: 2px;
-        }
-        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
-
-        /* 顶部玩家栏：严格垂直对齐 */
-        .player-bar { 
-            height: 90px; padding: 12px 10px; display: flex; gap: 15px; overflow-x: auto; 
-            background: var(--dark); z-index: 1001; border-bottom: 2px solid #222;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-shrink: 0;
-        }
-        .p-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 6px; width: 55px; }
-        .p-avatar { width: 46px; height: 46px; border: 3px solid #333; border-radius: 12px; position: relative; display: flex; align-items: center; justify-content: center; background: #000; transition: border-color 0.2s, box-shadow 0.2s; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: translateY(-2px); }
-        .p-avatar.companion { border-color: var(--purple); }
-        .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -8px; right: -8px; font-size: 0.8rem; filter: drop-shadow(0 0 2px #000); }
-        .p-item .name { font-size: 0.55rem; color: #aaa; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
-
-        /* 中间卡牌区 */
-        .main-deck { 
-            flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); 
-            gap: 12px; overflow-y: auto; align-content: start; position: relative;
-        }
-        .card { 
-            aspect-ratio: 2/3; background: #3d1563; border-radius: 10px; border: 2px solid rgba(255,255,255,0.05); 
-            cursor: pointer; background-image: repeating-conic-gradient(#4d1b7b 0 25%, #3d1563 0 50%); 
-            background-size: 12px 12px; box-shadow: 3px 3px 6px rgba(0,0,0,0.6); transition: transform 0.1s;
-        }
-        .card:active { transform: scale(0.95); }
-        .card.flipped { opacity: 0.05; pointer-events: none; }
-
-        /* 弹出问题卡 */
-        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
-        .focused-card { width: 85%; max-width: 320px; min-height: 300px; background: #eee; color: #111; border-radius: 16px; border: 6px solid #111; padding: 25px 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; transform: rotate(-1deg); box-shadow: 12px 12px 0px rgba(0,0,0,0.9); }
-
-        /* 底部控制舱：高度固定 */
-        .footer-console { height: 180px; background: var(--dark); border-top: 3px solid var(--pink); display: flex; flex-direction: column; z-index: 10000; flex-shrink: 0; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); display: flex; flex-direction: column; gap: 4px; }
+        /* 圆桌区 */
+        .table-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 50%, #1a100a 0%, #0d0907 100%); }
+        .wooden-table { width: 340px; height: 340px; background: radial-gradient(circle, #3a2218 0%, #1a100a 100%); border-radius: 50%; border: 4px solid #110804; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         
-        .chat-input-bar { padding: 6px 10px; background: #000; border-top: 1px solid #333; display: flex; }
-        #c-in { flex: 1; background: #111; border: 2px solid #444; color: #fff; padding: 8px 12px; font-family: inherit; font-size: 0.75rem; border-radius: 6px; outline: none; transition: 0.2s; }
-        #c-in:focus { border-color: var(--blue); }
+        /* 34道灵魂拷问 */
+        .card { width: 220px; background: #eaddcf; color: #111; padding: 25px 15px; border-radius: 8px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 5; transition: 0.5s; }
+        .c-text { font-size: 1.05rem; font-weight: bold; line-height: 1.6; }
 
-        .btn-grid { height: 70px; border-top: 2px solid var(--blue); display: flex; padding: 8px 10px; gap: 10px; background: #000; }
-        .p-btn { background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 3px 3px 0px #000; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: all 0.1s; text-transform: uppercase; }
-        .p-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #000; }
-        .p-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; box-shadow: none; transform: none; }
-        .p-btn.gold { color: var(--gold); border-color: var(--gold); }
-        .p-btn.purple { color: var(--purple); border-color: var(--purple); }
-        .p-btn.green { color: var(--green); border-color: var(--green); }
-        .p-btn.pink { color: var(--pink); border-color: var(--pink); }
+        /* 语音交互状态 */
+        .voice-ring { position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--gold); opacity: 0; }
+        .speaking .voice-ring { animation: pulse 1.5s infinite; opacity: 1; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.3); opacity: 0; } }
 
-        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 40000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
-        .setup-box { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; }
-        .setup-input { padding: 15px; border: 3px solid #444; background: #000; color: #fff; font-family: inherit; text-align: center; font-size: 1rem; font-weight: bold; width: 100%; outline: none; }
-        .setup-input:focus { border-color: var(--gold); }
+        /* 底部控制台 */
+        .console { padding: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; }
+        .mic-btn { width: 70px; height: 70px; background: var(--wood); border: 2px solid #4a2b1b; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .mic-btn.active { background: var(--gold); border-color: #fff; }
+        .mic-btn span { font-size: 0.6rem; margin-top: 4px; color: #888; }
+        .mic-btn.active span { color: #000; }
     </style>
 </head>
 <body>
 
-<div id="companion-notice">
-    <div class="comp-override-box">[ SYSTEM OVERRIDE: 像素酒馆营业中 ]</div>
-</div>
-
-<div id="setup">
-    <h1 style="color:var(--pink); font-size: 2.8rem; text-shadow: 6px 6px 0 var(--dark); margin-bottom: 30px; letter-spacing: -2px;">SOUL TAVERN</h1>
-    <div id="step-1-ui" class="setup-box">
-        <input type="text" id="nick-in" class="setup-input" placeholder="输入玩家代号..." autocomplete="off">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <button class="p-btn pink" style="padding: 15px 0;" onclick="initHardwareAndStart('host')">创建房间</button>
-            <button class="p-btn" style="padding: 15px 0;" onclick="showJoin('join')">输入口令进入</button>
+<div class="table-area">
+    <div class="wooden-table">
+        <div class="card" id="mainCard">
+            <div class="c-text" id="questionText">点击下方按钮，抽取第一张命运卡</div>
         </div>
-        <button class="p-btn purple" style="padding: 12px 0; margin-top: 5px;" onclick="showJoin('companion')">疗愈师通道</button>
-        <button class="p-btn gold" id="rejoin-btn" style="display:none;" onclick="initHardwareAndStart('rejoin')">回到灵魂频道</button>
-    </div>
-    <div id="step-2-ui" class="setup-box" style="display:none;">
-        <input type="text" id="id-in" class="setup-input" placeholder="输入6位灵魂口令..." autocomplete="off">
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 15px;">
-            <button class="p-btn" onclick="hideJoin()">返回</button>
-            <button class="p-btn gold" onclick="initHardwareAndStart(pendingMode)">灵魂推门</button>
+        <div id="player-0" class="seat" style="position:absolute; top:-30px; left:50%; transform:translateX(-50%);">
+            <div style="width:50px; height:50px; background:#222; border-radius:50%; border:2px solid #444; position:relative;">
+                <div class="voice-ring"></div>
+                <div style="text-align:center; line-height:50px">我</div>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="v-gate" style="position:fixed; inset:0; background:var(--dark); z-index:38000; display:none; flex-direction:column; align-items:center; justify-content:center;">
-    <h2 style="color:var(--gold); font-size: 1.5rem; margin-bottom: 20px; animation: pulse 1.5s infinite;">AUDIO SYNC...</h2>
-    <p style="color:#666; font-size: 0.7rem; margin-bottom: 30px;">正在建立灵魂网络</p>
-</div>
+<div class="console">
+    <div class="mic-btn" id="nextBtn" onclick="drawCard()">
+        <div style="font-size:1.5rem">🃏</div>
+        <span>翻牌</span>
+    </div>
 
-<div class="player-bar" id="p-bar"></div>
-<div class="main-deck" id="deck"></div>
+    <div class="mic-btn" id="micBtn" onmousedown="startVoice()" onmouseup="stopVoice()" ontouchstart="startVoice()" ontouchend="stopVoice()">
+        <div id="micIcon" style="font-size:1.5rem">🎙️</div>
+        <span id="micStatus">按住说话</span>
+    </div>
 
-<div id="focused-overlay">
-    <div class="focused-card" id="f-card">
-        <div style="color:var(--pink); font-weight: 900; font-size: 0.7rem; border-bottom: 2px dashed #ccc; padding-bottom: 10px; width: 100%;">[ SOUL FILE ]</div>
-        <div id="q-text" style="font-size: 1rem; line-height: 1.5; font-weight: bold; color: #111; margin: 20px 0;"></div>
-        <div id="vote-display" style="display:flex; gap:10px; font-size:1.5rem; height: 35px; align-items: center;"></div>
-        <button id="f-btn" class="p-btn gold" style="width:100%; height:50px; flex:none; margin-top: 15px;" disabled onclick="confirmEnd()">等待通过</button>
+    <div class="mic-btn" onclick="location.reload()">
+        <div style="font-size:1.5rem">🔄</div>
+        <span>重置</span>
     </div>
 </div>
-
-<div class="footer-console">
-    <div id="c-msgs"></div>
-    <div class="chat-input-bar">
-        <input type="text" id="c-in" placeholder="吐槽..." onkeypress="if(event.keyCode==13) sendChat()">
-    </div>
-    <div class="btn-grid" id="main-btns">
-        <button id="mic-btn" class="p-btn" onclick="toggleMic()">麦克风:关</button>
-        <button id="h-btn" class="p-btn green" onclick="vote('H')" disabled>👍 诚实</button>
-        <button id="comp-btn" class="p-btn purple" style="display:none;" onclick="toggleCompanionSpeech()">介入局</button>
-        <button id="l-btn" class="p-btn pink" onclick="vote('L')" disabled>👎 撒谎</button>
-        <button id="start-btn" class="p-btn gold" style="display:none; flex:2;" onclick="hostStartGame()">开启大审判</button>
-    </div>
-</div>
-
-<div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    // 40题完整阵列装载
     const questions = [
-        "找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "撇开工作上的联系，你觉得我们可以成为好朋友吗？", "如果你有一张1000万的彩彩彩票，必须送出去，你会给在座的谁？", "谁是你曾经最看不起、但现在由衷佩服的人？", "如果你明天就要消失，你最想坦白的一个关于自己的负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们合伙干一件坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？", "在座谁的哪句评价，曾让你感到背脊发凉？", "如果可以从某人身上“偷”走一种天赋，你最想偷谁的？", "说出一个你一直没敢向我确认的、关于我的负面传闻。", "如果给我们的交情设计一个重启键，你最想回到哪一个点？", "你曾在哪一瞬间，觉得我其实是一个极其自私的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”的伪装者？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”？", "如果我们被关进密室，只能活一个人，最后活下来的会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？", "描述一个你觉得我最“面目可憎”的瞬间。", "如果现在就是终点，你在星球上留下的最真实痕迹是什么？", "如果要一起去流亡，你觉得谁会是最先崩溃的人？", "哪一次你感到极其强烈的“归属感”", "如果你死后能保留一段记忆，你会保留关于谁的哪段记忆？", "描述一个你觉得我身上最廉价的品质。", "在座的人里，谁是你最想深交但觉得气场不合的人？", "说出一个你删除的一条信息，为什么删除？", "谁是你眼中那个除了资源其实一无处的蠢货？"
+        "你上一次哭，是因为什么？",
+        "你觉得这辈子最对不起的人是谁？为什么？",
+        "童年里哪一件看似很小的事情，其实一直负面影响你到现在？",
+        "此时此刻，你生活中最大的焦虑源头究竟是什么？",
+        "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？",
+        "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？",
+        "你这辈子，最想收到谁的一句“对不起”？",
+        "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
+        "你上一次对最亲近的人撒的谎是什么？",
+        "哪一个瞬间，你突然觉得这份工作/这个行业真的把你“榨干”了？",
+        "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？",
+        "你人生中，哪一天是你打死都不想再经历第二次的？",
+        "如果明天公司倒闭了，你的第一反应是恐慌，还是长舒一口气？",
+        "如果工资减半但能准时5点下班且没人找你，你会立刻答应还是犹豫？",
+        "假如有个按钮能彻底清空关于某一个人的所有记忆，你会按吗？",
+        "如果用一年寿命换取一件你曾经极其渴望但没得到的东西，你会换什么？",
+        "如果给你一千万代价是立刻和父母、爱人孩子绝交，你换吗？",
+        "如果进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？",
+        "假设有一瓶吐真剂，你会给谁喝？问他什么问题？",
+        "哪一句父母骂过你的话你当时不屑，现在却悲哀地发现自己变成了那样？",
+        "如果明天太阳不再升起，你今晚最后一顿饭想吃什么？身边坐着谁？",
+        "如果你有一件“隐身衣”，你想利用它去做什么？",
+        "分享一个你的“童年阴影”，可以是电影片段或生活打击。",
+        "哪一首歌的旋律一响，你的脑子里就会立刻无条件地弹出一个人？",
+        "此时此刻，如果有人递给你一张单程机票，你想立刻飞去哪？",
+        "哪一个本来跟你毫无血缘关系的人，曾给过你一种“亲人”的感觉？",
+        "如果人的寿命可以像微信转账一样给别人，你会把你的一年寿命转给谁？",
+        "如果有一个快进键能跳过你现在正在熬的日子，代价是减寿三年，你按吗？",
+        "假设你能以上帝视角参加自己的葬礼，谁会在角落里哭得最伤心？",
+        "如果现在给你一个“合法报复一次”的额度，你会立刻用在谁身上？",
+        "走之前你只想最后去见一个人，你会见谁？",
+        "如果你死后手机数据被公开展示，你最怕被谁看到里面的哪一部分？",
+        "如果可以用一句话总结你上一段失败的感情，你会说什么？",
+        "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
-    const emojis = ["🃏", "💀", "👁️", "🌙", "🧿", "🔥", "🔮", "🎭"];
-    const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
 
-    let peer, conns = [], myNick = "", isHost = false, isCompanion = false;
-    let players = [], flipped = [], turnIdx = 0, isShowing = false, curQIdx = -1;
-    let votes = [], liarId = "", gameState = 'WAIT', localStream = null, isMuted = true, isCompanionSpeechActive = false;
-    let audioUnlocked = false;
-
-    window.onload = () => { if(localStorage.getItem('ps_nick_v44')) document.getElementById('rejoin-btn').style.display='block'; };
-
-    function showJoin(m){ pendingMode=m; document.getElementById('step-1-ui').style.display='none'; document.getElementById('step-2-ui').style.display='flex'; }
-    function hideJoin(){ document.getElementById('step-1-ui').style.display='flex'; document.getElementById('step-2-ui').style.display='none'; }
-
-    // 优化：点击瞬间解锁系统底层音频并初始化硬件和网络
-    async function initHardwareAndStart(mode) {
-        if(!audioUnlocked) {
-            try {
-                // 强制唤醒音轨
-                let a = new AudioContext();
-                let o = a.createOscillator();
-                o.connect(a.destination); o.start(0); o.stop(0.01);
-                audioUnlocked = true;
-            } catch(e) { console.log("Audio activation bypassed"); }
-        }
-        
-        if(mode === 'rejoin') { myNick = localStorage.getItem('ps_nick_v44'); document.getElementById('id-in').value = localStorage.getItem('ps_room_v44'); isCompanion = localStorage.getItem('ps_iscomp_v44')==='true'; }
-        else { myNick = document.getElementById('nick-in').value || "ANON"; isHost = (mode==='host'); isCompanion = (mode==='companion'); }
-        
-        document.getElementById('setup').style.display = 'none'; 
-        document.getElementById('v-gate').style.display = 'flex';
-        
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-            localStream.getAudioTracks()[0].enabled = false; // 初始静音
-        } catch(e) { appendChat("SYSTEM", "麦克风未授权，您将只能吐槽。"); }
-
-        peer = new Peer({ config: iceCfg, secure: true });
-        peer.on('open', id => {
-            document.getElementById('v-gate').style.display = 'none';
-            if(isHost) { 
-                players = [{id, nick: myNick, avatar: emojis[0], isCompanion, lieVotes: 0, isSpeaking: false}]; 
-                document.getElementById('start-btn').style.display = 'flex'; 
-                sync(); saveLocal(id); 
-            } 
-            else { connect(document.getElementById('id-in').value.trim()); saveLocal(document.getElementById('id-in').value.trim()); }
-        });
-        peer.on('connection', setupConn);
-        peer.on('call', call => { call.answer(localStream); handleVoiceStream(call); });
+    function drawCard() {
+        const rand = Math.floor(Math.random() * questions.length);
+        document.getElementById('questionText').innerText = questions[rand];
+        // 这里可以加入翻牌音效
     }
 
-    function saveLocal(r){ localStorage.setItem('ps_nick_v44', myNick); localStorage.setItem('ps_room_v44', r); localStorage.setItem('ps_iscomp_v44', isCompanion); }
-
-    function hostStartGame() {
-        if(!isHost) return;
-        let pList = players.filter(p => !p.isCompanion);
-        if(pList.length < 2) { appendChat("SYSTEM", "真实玩家不足2人"); return; }
-        liarId = pList[Math.floor(Math.random() * pList.length)].id;
-        gameState = 'NORMAL';
-        document.getElementById('start-btn').style.display = 'none';
-        sync();
+    // --- 语音交互逻辑模拟 ---
+    function startVoice() {
+        document.getElementById('micBtn').classList.add('active');
+        document.getElementById('player-0').classList.add('speaking');
+        document.getElementById('micStatus').innerText = "正在倾听...";
+        // 此处调用 SDK 的开始录音/推流接口
     }
 
-    function setupConn(c) {
-        c.on('open', () => { if(!conns.find(x => x.peer === c.peer)) conns.push(c); c.send({type:'JOIN', nick: myNick, isComp: isCompanion}); if(localStream) peer.call(c.peer, localStream); });
-        c.on('data', data => {
-            if(data.type === 'JOIN' && isHost) {
-                players.push({id: c.peer, nick: data.nick, avatar: emojis[players.length % emojis.length], isCompanion: data.isComp, lieVotes: 0, isSpeaking: false});
-                c.send({type: 'PEER_LIST', list: players.map(p => p.id)}); sync();
-            }
-            else if(data.type === 'SYNC') {
-                players = data.players; flipped = data.flipped; turnIdx = data.turnIdx;
-                isShowing = data.isShowing; votes = data.votes; curQIdx = data.curQIdx;
-                gameState = data.gameState; handleCompanionSpeech(data.compSpeech);
-                applyState();
-            }
-            else if(data.type === 'COMPANION_SPEECH' && isHost) { handleCompanionSpeech(data.active); sync(); }
-            else if(data.type === 'VOTE' && isHost) { votes.push({from: data.from, type: data.val}); if(data.val === 'L') players[turnIdx].lieVotes++; sync(); }
-            else if(data.type === 'DRAW' && isHost) { isShowing = true; curQIdx = data.index; flipped.push(data.index); sync(); }
-            else if(data.type === 'FINISH' && isHost) nextTurn();
-            else if(data.type === 'VOICE_STATE') { let p = players.find(x => x.id === data.from); if(p){ p.isSpeaking = data.state; renderPlayers(); } }
-            else if(data.type === 'CHAT') { appendChat(data.nick, data.msg); if(isHost) broadcast(data); }
-        });
-        c.on('close', () => { if(isHost) handleDisconnect(c.peer); });
+    function stopVoice() {
+        document.getElementById('micBtn').classList.remove('active');
+        document.getElementById('player-0').classList.remove('speaking');
+        document.getElementById('micStatus').innerText = "按住说话";
+        // 此处调用 SDK 的停止录音接口
     }
-
-    function toggleMic() {
-        if(!localStream) return;
-        isMuted = !isMuted;
-        localStream.getAudioTracks()[0].enabled = !isMuted;
-        document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开";
-        document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active";
-        let me = players.find(p => p.id === peer.id);
-        if(me) { me.isSpeaking = !isMuted; renderPlayers(); }
-        if(isHost) sync(); else conns.forEach(c => c.send({type:'VOICE_STATE', from:peer.id, state:!isMuted}));
-    }
-
-    function handleVoiceStream(call) {
-        call.on('stream', stream => {
-            let a = document.createElement('audio'); a.autoplay=true; a.setAttribute('playsinline','true'); a.srcObject=stream;
-            document.getElementById('audio-bridge').appendChild(a);
-        });
-    }
-
-    function toggleCompanionSpeech() {
-        if(!isCompanion) return;
-        isCompanionSpeechActive = !isCompanionSpeechActive;
-        const data = { type: 'COMPANION_SPEECH', active: isCompanionSpeechActive };
-        if(isHost) { handleCompanionSpeech(isCompanionSpeechActive); sync(); }
-        else { conns.forEach(c => c.send(data)); }
-    }
-
-    function handleCompanionSpeech(active) {
-        document.getElementById('companion-notice').style.display = active ? 'flex' : 'none';
-        isCompanionSpeechActive = active;
-        document.getElementById('comp-btn').innerText = active ? "系统重置中" : "介入局";
-        document.getElementById('comp-btn').className = active ? "p-btn active" : "p-btn purple";
-    }
-
-    function applyState() {
-        const overlay = document.getElementById('focused-overlay');
-        if(isShowing && curQIdx !== -1) { overlay.style.display = 'flex'; document.getElementById('q-text').innerText = questions[curQIdx]; } else { overlay.style.display = 'none'; }
-        if(isCompanion) { document.getElementById('comp-btn').style.display = 'flex'; document.getElementById('h-btn').style.display = 'none'; document.getElementById('l-btn').style.display = 'none'; }
-        renderPlayers(); renderDeck(); updateTurnStatus(); updateVoteDisplay();
-    }
-
-    function sync() { if(isHost) broadcast({type:'SYNC', players, flipped, turnIdx, isShowing, votes, curQIdx, gameState, compSpeech: isCompanionSpeechActive}); applyState(); }
-    function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
-    function nextTurn() { if(!isHost) return; do { turnIdx = (turnIdx + 1) % players.length; } while (players[turnIdx]?.isCompanion); isShowing = false; votes = []; sync(); }
-    function draw(i) { if(players[turnIdx]?.id !== peer.id || isShowing || isCompanion) return; if(isHost) { isShowing = true; curQIdx = i; flipped.push(i); sync(); } else { conns.forEach(c => c.send({type:'DRAW', index: i})); } }
-    function renderPlayers() { document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-item"><div class="p-avatar ${i===turnIdx?'active':''} ${p.isSpeaking?'speaking':''} ${p.isCompanion?'companion':''}"><div class="emoji">${p.avatar}</div></div><div class="name">${p.isCompanion?'[陪]':''}${p.nick}</div></div>`).join(''); }
-    function updateTurnStatus() { let isM = (players[turnIdx]?.id === peer.id); document.getElementById('h-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); document.getElementById('l-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); }
-    function renderDeck() { let d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { d.innerHTML += `<div class="card ${flipped.includes(i)?'flipped':''}" onclick="draw(${i})"></div>`; } }
-    function confirmEnd() { if(isHost) nextTurn(); else conns.forEach(c => c.send({type:'FINISH'})); }
-    function vote(val) { if(isHost) { votes.push({from: peer.id, type: val}); if(val==='L') players[turnIdx].lieVotes++; sync(); } else { conns.forEach(c => c.send({type:'VOTE', from: peer.id, val})); } }
-    function updateVoteDisplay() {
-        const box = document.getElementById('vote-display'); box.innerHTML = "";
-        votes.forEach(v => { box.innerHTML += `<span style="color:${v.type==='H'?'var(--green)':'var(--pink)'}; animation: glitch-pulse 0.2s 1;">${v.type==='H'?'👍':'👎'}</span>`; });
-        const b = document.getElementById('f-btn');
-        if(players[turnIdx]?.id === peer.id) {
-            const others = players.filter(p => !p.isCompanion && p.id !== peer.id);
-            b.disabled = votes.length < others.length;
-            b.innerText = b.disabled ? `等待同频(${votes.length}/${others.length})` : "回答完毕";
-        }
-    }
-    function connect(rid) { let c = peer.connect(rid, { reliable: true }); setupConn(c); }
-    function sendChat() { let i = document.getElementById('c-in'); if(!i.value.trim()) return; let d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; appendChat(myNick, d.msg); }
-    function appendChat(n, m) { let b = document.getElementById('c-msgs'); b.innerHTML += `<div><span style="color:#555">[<span style="color:var(--gold)">${n}</span>]</span> <span style="color:#ddd">${m}</span></div>`; b.scrollTop = b.scrollHeight; }
-    function handleDisconnect(id) { let idx = players.findIndex(p => p.id === id); if(idx !== -1) { players.splice(idx, 1); sync(); } }
 </script>
 </body>
 </html>
