@@ -3,45 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - V45.4</title>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <title>SPEAK - V45.6</title>
     <style>
-        :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; --dark: #000; }
+        :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- 弹窗与引导层 --- */
-        .overlay { position: fixed; inset: 0; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); background: rgba(0,0,0,0.9); }
+        /* --- 首页底图动画 (Balatro Style) --- */
+        .plasma-bg { position: absolute; inset: 0; z-index: -1; opacity: 0.3; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
+        @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+
+        /* --- 引导与弹窗 --- */
+        .overlay { position: fixed; inset: 0; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.95); }
         .modal { width: 85%; max-width: 320px; background: #eee; color: #111; border: 4px solid #000; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 10px 10px 0 var(--pink); }
-        
-        /* 电池电量样式 */
-        .battery-box { width: 100px; height: 180px; border: 4px solid #000; margin: 20px auto; position: relative; padding: 4px; }
-        .battery-cap { width: 30px; height: 10px; background: #000; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); }
-        .battery-level { width: 100%; background: var(--pink); position: absolute; bottom: 0; transition: 0.5s; }
 
-        /* 大转盘动画 */
-        .wheel { width: 200px; height: 200px; border: 6px solid #000; border-radius: 50%; position: relative; animation: spin 2s cubic-bezier(0.1, 0.7, 1, 0.1) infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 绿色电量设计 */
+        .battery-container { width: 80px; height: 160px; border: 4px solid #000; margin: 20px auto; position: relative; padding: 3px; background: #fff; }
+        .battery-cap { width: 24px; height: 8px; background: #000; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); }
+        .battery-level { width: 100%; background: var(--green); position: absolute; bottom: 0; transition: 0.3s; box-shadow: 0 0 15px var(--green); }
+        .battery-text { font-size: 1.5rem; font-weight: 900; color: var(--green); text-shadow: 2px 2px 0 #000; margin: 10px 0; }
 
-        /* --- 主界面：卡牌与舞台 --- */
-        .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 1000px; }
-        
-        /* 16:9 竖版档案卡 - 翻转动画 */
+        /* 玩家头像栏：增加电量显示 */
+        .player-bar { height: 100px; padding: 10px; display: flex; gap: 12px; background: #000; border-bottom: 2px solid #222; overflow-x: auto; }
+        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; transition: 0.3s; opacity: 0.5; }
+        .p-item.active { opacity: 1; transform: scale(1.1); }
+        .p-batt-val { font-size: 0.6rem; color: var(--green); font-weight: bold; margin-bottom: 2px; }
+        .p-avatar { width: 44px; height: 44px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; }
+        .active .p-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+        /* --- 仪式感卡牌动画 --- */
+        .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 1500px; }
         #focus-board { 
-            position: absolute; width: 75%; aspect-ratio: 9 / 16; 
-            background: #fff; color: #111; border: 4px solid #000; border-radius: 12px;
-            padding: 30px 20px; display: none; flex-direction: column; align-items: center;
-            z-index: 5000; box-shadow: 15px 15px 0 rgba(0,0,0,0.5);
-            transition: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform: rotateY(90deg) scale(0.5); /* 初始隐藏态 */
+            position: absolute; width: 75%; aspect-ratio: 9 / 16; background: #fff; color: #111; border: 5px solid #000; 
+            border-radius: 12px; padding: 25px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
+            z-index: 5000; box-shadow: 20px 20px 0 rgba(0,0,0,0.5);
+            /* 慢速反转入场动画 */
+            transform: translateY(100%) rotateX(-180deg) scale(0.5);
+            transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s;
+            opacity: 0;
         }
-        #focus-board.show { transform: rotateY(0deg) scale(1); display: flex; }
-
-        /* 顶部状态栏与底座保持不变 */
-        #guide-bar { height: 36px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem; gap: 8px; }
-        .player-bar { height: 85px; padding: 10px; display: flex; gap: 12px; background: var(--dark); border-bottom: 2px solid #222; }
-        .p-avatar { width: 44px; height: 44px; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #111; }
-        .p-item.active .p-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg) scale(1); opacity: 1; }
 
         /* 底部操作 */
         .footer { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
@@ -49,129 +50,111 @@
         .btn-panel { height: 90px; display: flex; padding: 8px; gap: 6px; align-items: center; }
         .ctrl-btn { flex: 1; height: 55px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.7rem; }
         .ctrl-btn.mic { border-radius: 50%; width: 66px; height: 66px; flex: none; font-size: 1.5rem; color: #fff; }
-        .ctrl-btn.mic.on { background: var(--pink); border-color: #fff; }
+        .ctrl-btn.gold { border-color: var(--gold); color: var(--gold); }
 
         /* 登录页 */
-        #login-screen { position: fixed; inset: 0; z-index: 50000; background: radial-gradient(circle at center, #1a0826 0%, #050505 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #login-screen { position: fixed; inset: 0; z-index: 50000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .run-btn { width: 100%; padding: 16px; background: var(--pink); border: 3px solid #fff; color: #fff; font-weight: 900; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
+    <div class="plasma-bg"></div>
     <div style="font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 40px;">SPEAK</div>
     <div style="width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 15px;">
-        <input type="text" id="nick-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="输入代号">
-        <input type="text" id="room-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="输入6位房号">
-        <button class="run-btn" onclick="preStart('join')">加入房间</button>
-        <button class="run-btn" style="background:var(--purple);" onclick="preStart('host')">我是陪伴师</button>
+        <input type="text" id="nick-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="代号">
+        <input type="text" id="room-in" style="padding:15px; background:#000; border:2px solid #333; color:var(--gold); text-align:center;" placeholder="房号">
+        <button class="run-btn" onclick="init('join')">加入房间</button>
+        <button class="run-btn" style="background:var(--purple);" onclick="init('companion')">陪伴师入口</button>
     </div>
 </div>
 
-<div id="rule-overlay" class="overlay">
-    <div class="modal">
-        <h3 style="margin-bottom:15px;">- 游戏规则 -</h3>
-        <p style="font-size:0.8rem; text-align:left; line-height:1.6;">
-            1. 陪伴师引导全场，不参与抽卡。<br>
-            2. 玩家轮流开启深度档案，诚实作答。<br>
-            3. 其他人可实时点赞或表达异议。<br>
-            4. 所有的回答都将留在这间酒馆。
-        </p>
-        <button class="run-btn" style="margin-top:20px; font-size:1rem;" onclick="showBattery()">我已阅读并确认</button>
+<div id="wait-overlay" class="overlay">
+    <div class="modal" style="background:#111; color:var(--gold); border-color:var(--gold);">
+        <h3>房间已建立</h3>
+        <p style="margin:20px 0; font-size:0.8rem;">等待参与者加入... 当人员齐备后，点击下方开启灵魂审判。</p>
+        <button class="run-btn" style="background:var(--gold); color:#000;" onclick="hostStart()">开启审判 (START)</button>
     </div>
 </div>
 
 <div id="battery-overlay" class="overlay">
-    <div class="modal" style="background:#000; color:#fff; border-color:var(--pink);">
+    <div class="modal" style="background:#000; color:#fff; border-color:var(--green);">
         <p>如果现在的精力比做电池...</p>
-        <h2 style="color:var(--pink); margin:10px 0;">现在的你是多少？</h2>
-        <div class="battery-box">
+        <div id="battery-val-display" class="battery-text">50%</div>
+        <div class="battery-container">
             <div class="battery-cap"></div>
             <div id="battery-fill" class="battery-level" style="height: 50%;"></div>
         </div>
-        <input type="range" min="1" max="100" value="50" oninput="document.getElementById('battery-fill').style.height = this.value+'%'" style="width:100%;">
-        <button class="run-btn" style="margin-top:20px;" onclick="showWheel()">确认电量</button>
+        <input type="range" min="1" max="100" value="50" oninput="updateBatteryUI(this.value)" style="width:100%; accent-color:var(--green);">
+        <button class="run-btn" style="background:var(--green); color:#000; margin-top:20px;" onclick="finishBattery()">确认电量</button>
     </div>
 </div>
 
-<div id="wheel-overlay" class="overlay">
-    <div class="modal" style="background:transparent; border:none; box-shadow:none;">
-        <div class="wheel">
-            <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); color:var(--pink);">▼</div>
-        </div>
-        <h2 id="wheel-msg" style="margin-top:40px; color:#fff; text-shadow:0 0 10px var(--pink);">正在抽取首位发言者...</h2>
-    </div>
-</div>
-
-<div id="guide-bar">>>> 档案室已锁定</div>
+<div id="guide-bar">>>> 档案室未开启</div>
 <div class="player-bar" id="p-bar"></div>
 <div class="stage">
     <div id="focus-board">
-        <div style="font-size:0.6rem; color:#999;">[ PRIVATE ARCHIVE ]</div>
-        <div id="q-text" style="font-size:1.1rem; font-weight:bold; flex:1; display:flex; align-items:center; text-align:center;"></div>
-        <div style="display:flex; gap:10px; width:100%;">
-            <button class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);" onclick="transferCard()">转移</button>
-            <button class="ctrl-btn" style="border-color:var(--gold); color:var(--gold); flex:2;" onclick="closeCard()">关闭档案</button>
-        </div>
+        <div style="font-size:0.6rem; color:#999; text-transform:uppercase;">[ Private Archive ]</div>
+        <div id="q-text"></div>
+        <button class="ctrl-btn" style="width:100%; border-color:var(--gold); color:var(--gold);" onclick="closeCard()">回答完毕，关闭档案</button>
     </div>
-    <div id="deck" style="display:flex; gap:15px; overflow-x:auto; padding:20px; width:100%;"></div>
+    <div id="deck" style="display:flex; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
 </div>
 
 <div class="footer">
     <div id="chat-flow"></div>
     <div class="btn-panel">
-        <button class="ctrl-btn" onclick="appendChat('我','👍')">点赞</button>
-        <button class="ctrl-btn" style="border-color:#444;" onclick="appendChat('我','❌')">不同意</button>
-        <button id="mic-btn" class="ctrl-btn mic" onclick="this.classList.toggle('on')">🎙️</button>
-        <button class="ctrl-btn" style="border-color:var(--gold); color:var(--gold);" onclick="nextTurn()">下一位</button>
+        <button class="ctrl-btn" onclick="reaction('👍')">点赞</button>
+        <button class="ctrl-btn" style="border-color:#444;" onclick="reaction('❌')">反对</button>
+        <button class="ctrl-btn mic" onclick="this.classList.toggle('on')">🎙️</button>
+        <button class="ctrl-btn gold" onclick="nextTurn()">下一位</button>
     </div>
 </div>
 
 <script>
-    const questions = ["你上一次哭是因为什么？", "如果你有一件隐身衣你想去做什么？", "明天公司倒闭，你是恐慌还是解脱？", "此时此刻最大的焦虑源头是什么？"];
-    let players = [], turnIdx = -1, myRole = 'player', flipped = [];
+    let players = [], myNick = "", myBatt = "50%", turnIdx = -1, isHost = false, flipped = [];
+    const qs = ["你上一次哭是因为什么？", "如果你有一件隐身衣你想去做什么？", "此时此刻最大的焦虑源头是什么？"];
 
-    // --- 流程控制 ---
-    function preStart(role) {
-        myRole = role;
+    function init(mode) {
+        myNick = document.getElementById('nick-in').value || "ANON";
+        isHost = (mode === 'companion');
         document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('rule-overlay').style.display = 'flex';
+        if(isHost) {
+            document.getElementById('wait-overlay').style.display = 'flex';
+        } else {
+            appendChat("系统", "已进入房间，等待陪伴师开启...");
+        }
     }
 
-    function showBattery() {
-        document.getElementById('rule-overlay').style.display = 'none';
+    function hostStart() {
+        // 模拟广播全员：进入电量环节
+        document.getElementById('wait-overlay').style.display = 'none';
         document.getElementById('battery-overlay').style.display = 'flex';
     }
 
-    function showWheel() {
-        document.getElementById('battery-overlay').style.display = 'none';
-        document.getElementById('wheel-overlay').style.display = 'flex';
-        
-        setTimeout(() => {
-            document.getElementById('wheel-msg').innerText = "首位发言者已锁定！";
-            setTimeout(() => {
-                document.getElementById('wheel-overlay').style.display = 'none';
-                enterGame();
-            }, 1500);
-        }, 2000);
+    function updateBatteryUI(v) {
+        myBatt = v + "%";
+        document.getElementById('battery-val-display').innerText = myBatt;
+        document.getElementById('battery-fill').style.height = v + "%";
     }
 
-    function enterGame() {
-        const nick = document.getElementById('nick-in').value || "ANON";
-        players = [{nick, isComp: (myRole==='host')}];
-        if(myRole==='host') players.push({nick:'测试玩家A', isComp:false});
+    function finishBattery() {
+        document.getElementById('battery-overlay').style.display = 'none';
+        players = [{nick: myNick, batt: myBatt, isComp: isHost}];
+        if(isHost) players.push({nick:'测试人A', batt:'80%', isComp:false});
         turnIdx = 0;
         renderPlayers();
         renderDeck();
-        document.getElementById('guide-bar').innerText = ">>> 档案室已开启，请抽牌";
+        document.getElementById('guide-bar').innerText = ">>> 游戏正式开始";
     }
 
-    // --- 游戏逻辑 ---
     function renderPlayers() {
         document.getElementById('p-bar').innerHTML = players.map((p, i) => `
             <div class="p-item ${i===turnIdx?'active':''}">
+                <div class="p-batt-val">${p.batt}</div>
                 <div class="p-avatar">${p.isComp?'🧿':'🃏'}</div>
-                <div style="font-size:0.5rem; margin-top:4px;">${p.nick}</div>
+                <div style="font-size:0.5rem; margin-top:4px; color:#888;">${p.nick}</div>
             </div>
         `).join('');
     }
@@ -186,18 +169,19 @@
         if(flipped.includes(i)) return;
         flipped.push(i);
         const board = document.getElementById('focus-board');
-        document.getElementById('q-text').innerText = questions[Math.floor(Math.random()*questions.length)];
+        document.getElementById('q-text').innerText = qs[Math.floor(Math.random()*qs.length)];
         
-        // 动画显示
+        // 仪式感动画开启
         board.style.display = 'flex';
-        setTimeout(() => board.classList.add('show'), 10);
+        void board.offsetWidth; // 触发回流
+        board.classList.add('show');
         renderDeck();
     }
 
     function closeCard() {
         const board = document.getElementById('focus-board');
         board.classList.remove('show');
-        setTimeout(() => board.style.display = 'none', 600);
+        setTimeout(() => board.style.display = 'none', 1000);
     }
 
     function nextTurn() {
@@ -206,6 +190,7 @@
         renderPlayers();
     }
 
+    function reaction(e) { appendChat("我", `发送评价: ${e}`); }
     function appendChat(n, m) {
         const b = document.getElementById('chat-flow');
         b.innerHTML += `<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`;
