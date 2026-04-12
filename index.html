@@ -3,416 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PIXEL SOUL V45 - 心灵酒馆</title>
+    <title>PIXEL SOUL V44.1.2 - 像素酒馆</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #0b0c10; --pink: #f08a5d; --blue: #66fcf1; --gold: #f9a826; --dark: #1f2833; --light: #c5c6c7; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        :root { --bg: #13061c; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; --dark: #0a0310; }
+        * { image-rendering: pixelated; box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
         body {
-            background: var(--bg); color: var(--light); font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: #fff; font-family: "Courier New", monospace;
             display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-            background-image: radial-gradient(circle at 50% 30%, #1f2833 0%, #0b0c10 70%);
+            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+            background-size: 100% 4px, 4px 100%;
         }
 
-        /* 顶部状态与排队栏 */
-        .header { height: 70px; background: rgba(11, 12, 16, 0.8); border-bottom: 1px solid #333; display: flex; flex-direction: column; justify-content: center; padding: 0 15px; flex-shrink: 0; z-index: 10; backdrop-filter: blur(5px); }
-        .status-text { font-size: 0.75rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .queue-bar { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
-        .queue-item { font-size: 0.7rem; background: var(--dark); padding: 3px 10px; border-radius: 12px; color: #aaa; border: 1px solid #444; white-space: nowrap; }
-        .queue-item.active { background: rgba(249, 168, 38, 0.2); color: var(--gold); border-color: var(--gold); }
+        /* 陪伴师专属介入特效 - 硬核像素故障感 */
+        #companion-notice { 
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 15000; 
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            pointer-events: none; backdrop-filter: blur(4px);
+        }
+        .comp-override-box {
+            border: 4px solid var(--purple); padding: 20px 40px; background: rgba(163, 51, 255, 0.1);
+            color: var(--purple); font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 10px var(--purple);
+            box-shadow: inset 0 0 20px rgba(163, 51, 255, 0.5), 0 0 30px rgba(163, 51, 255, 0.3);
+            animation: glitch-anim 0.2s infinite; letter-spacing: 2px;
+        }
+        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
 
-        /* 中央篝火与舞台区 */
-        .stage { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
+        /* 顶部玩家栏：严格垂直对齐 */
+        .player-bar { 
+            height: 90px; padding: 12px 10px; display: flex; gap: 15px; overflow-x: auto; 
+            background: var(--dark); z-index: 1001; border-bottom: 2px solid #222;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-shrink: 0;
+        }
+        .p-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 6px; width: 55px; }
+        .p-avatar { width: 46px; height: 46px; border: 3px solid #333; border-radius: 12px; position: relative; display: flex; align-items: center; justify-content: center; background: #000; transition: border-color 0.2s, box-shadow 0.2s; }
+        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: translateY(-2px); }
+        .p-avatar.companion { border-color: var(--purple); }
+        .p-avatar.speaking::after { content: "🎙️"; position: absolute; top: -8px; right: -8px; font-size: 0.8rem; filter: drop-shadow(0 0 2px #000); }
+        .p-item .name { font-size: 0.55rem; color: #aaa; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+
+        /* 中间卡牌区 */
+        .main-deck { 
+            flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); 
+            gap: 12px; overflow-y: auto; align-content: start; position: relative;
+        }
+        .card { 
+            aspect-ratio: 2/3; background: #3d1563; border-radius: 10px; border: 2px solid rgba(255,255,255,0.05); 
+            cursor: pointer; background-image: repeating-conic-gradient(#4d1b7b 0 25%, #3d1563 0 50%); 
+            background-size: 12px 12px; box-shadow: 3px 3px 6px rgba(0,0,0,0.6); transition: transform 0.1s;
+        }
+        .card:active { transform: scale(0.95); }
+        .card.flipped { opacity: 0.05; pointer-events: none; }
+
+        /* 弹出问题卡 */
+        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
+        .focused-card { width: 85%; max-width: 320px; min-height: 300px; background: #eee; color: #111; border-radius: 16px; border: 6px solid #111; padding: 25px 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; transform: rotate(-1deg); box-shadow: 12px 12px 0px rgba(0,0,0,0.9); }
+
+        /* 底部控制舱：高度固定 */
+        .footer-console { height: 180px; background: var(--dark); border-top: 3px solid var(--pink); display: flex; flex-direction: column; z-index: 10000; flex-shrink: 0; }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); display: flex; flex-direction: column; gap: 4px; }
         
-        /* 卡牌样式重构 */
-        .card-container { perspective: 1000px; width: 100%; max-width: 280px; height: 380px; display: none; z-index: 5; }
-        .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s; transform-style: preserve-3d; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-        .card.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; text-align: center; border: 2px solid #444; }
-        .card-front { background: linear-gradient(135deg, #1f2833, #0b0c10); color: var(--gold); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px); }
-        .card-back { background: #e5e5e6; color: #111; transform: rotateY(180deg); border: 4px solid var(--dark); }
-        .card-back.healer-card { background: #1a1a2e; color: var(--blue); border-color: var(--blue); box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); }
-        
-        .card-title { font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.6; }
-        .card-content { font-size: 1.1rem; line-height: 1.6; font-weight: bold; }
-        .healer-content { font-size: 1.3rem; margin-bottom: 10px; color: var(--blue); }
-        .healer-desc { font-size: 0.85rem; color: #888; line-height: 1.5; }
-
-        /* 光遇式交互粒子 */
-        .particle { position: absolute; bottom: 0; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 10px var(--gold); animation: floatUp 2s ease-out forwards; pointer-events: none; z-index: 20; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-300px) scale(0); opacity: 0; } }
-        .ripple { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border: 2px solid var(--pink); border-radius: 50%; animation: rippleAnim 1.5s ease-out forwards; pointer-events: none; z-index: 1; }
-        @keyframes rippleAnim { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 300px; height: 300px; opacity: 0; } }
-
-        /* 底部交互舱 */
-        .footer-console { height: 130px; background: rgba(11, 12, 16, 0.95); border-top: 1px solid #222; display: flex; flex-direction: column; flex-shrink: 0; padding: 10px 15px; gap: 10px; z-index: 10; backdrop-filter: blur(10px); }
-        
-        .btn-row { display: flex; gap: 10px; height: 50px; }
-        .p-btn { flex: 1; background: var(--dark); border: 1px solid #444; color: var(--light); border-radius: 8px; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; outline: none; }
-        .p-btn:active { transform: scale(0.95); background: #333; }
-        .p-btn:disabled { opacity: 0.4; pointer-events: none; }
-        .p-btn.gold { color: var(--gold); border-color: var(--gold); }
-        .p-btn.blue { color: var(--blue); border-color: var(--blue); }
-        .p-btn.pink { color: var(--pink); border-color: var(--pink); }
-        .p-btn.active-mic { background: rgba(102, 252, 241, 0.2); color: var(--blue); border-color: var(--blue); animation: micPulse 1.5s infinite; }
-        @keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(102, 252, 241, 0); } 100% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0); } }
-
-        /* 匿名递纸条区 */
-        .chat-input-bar { display: flex; gap: 10px; height: 40px; }
-        #c-in { flex: 1; background: #000; border: 1px solid #333; border-radius: 20px; padding: 0 15px; color: #fff; outline: none; font-size: 0.8rem; }
+        .chat-input-bar { padding: 6px 10px; background: #000; border-top: 1px solid #333; display: flex; }
+        #c-in { flex: 1; background: #111; border: 2px solid #444; color: #fff; padding: 8px 12px; font-family: inherit; font-size: 0.75rem; border-radius: 6px; outline: none; transition: 0.2s; }
         #c-in:focus { border-color: var(--blue); }
-        .send-btn { background: transparent; border: none; color: #888; font-weight: bold; padding: 0 10px; }
-        
-        /* 弹幕流 */
-        #danmaku-container { position: absolute; top: 20px; left: 0; width: 100%; height: 150px; pointer-events: none; z-index: 100; overflow: hidden; }
-        .danmaku { position: absolute; white-space: nowrap; color: rgba(255,255,255,0.8); font-size: 0.85rem; text-shadow: 1px 1px 2px #000; animation: passBy 8s linear forwards; }
-        @keyframes passBy { from { left: 100%; } to { left: -100%; } }
 
-        /* 登录界面的蒙版 */
-        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 40000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-        .setup-input { width: 100%; max-width: 280px; padding: 15px; border: 2px solid #444; background: #000; color: #fff; text-align: center; font-size: 1rem; border-radius: 10px; margin-bottom: 15px; outline: none; }
-        .setup-input:focus { border-color: var(--blue); }
+        .btn-grid { height: 70px; border-top: 2px solid var(--blue); display: flex; padding: 8px 10px; gap: 10px; background: #000; }
+        .p-btn { background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 0.75rem; box-shadow: 3px 3px 0px #000; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: all 0.1s; text-transform: uppercase; }
+        .p-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #000; }
+        .p-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; box-shadow: none; transform: none; }
+        .p-btn.gold { color: var(--gold); border-color: var(--gold); }
+        .p-btn.purple { color: var(--purple); border-color: var(--purple); }
+        .p-btn.green { color: var(--green); border-color: var(--green); }
+        .p-btn.pink { color: var(--pink); border-color: var(--pink); }
+
+        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 40000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; }
+        .setup-box { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; }
+        .setup-input { padding: 15px; border: 3px solid #444; background: #000; color: #fff; font-family: inherit; text-align: center; font-size: 1rem; font-weight: bold; width: 100%; outline: none; }
+        .setup-input:focus { border-color: var(--gold); }
     </style>
 </head>
 <body>
 
+<div id="companion-notice">
+    <div class="comp-override-box">[ SYSTEM OVERRIDE: 像素酒馆营业中 ]</div>
+</div>
+
 <div id="setup">
-    <h1 style="color:var(--light); font-size: 2rem; margin-bottom: 5px; letter-spacing: 2px;">SOUL TAVERN</h1>
-    <p style="color:#666; font-size: 0.8rem; margin-bottom: 40px;">- 卸下防御，点燃篝火 -</p>
-    
-    <div id="step-1" style="width:100%; max-width:280px; display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="nick-in" class="setup-input" placeholder="输入你的名字..." autocomplete="off">
-        <button class="p-btn blue" style="height:50px;" onclick="initRoom('healer')">我是疗愈师 (开启酒馆)</button>
-        <button class="p-btn" style="height:50px;" onclick="document.getElementById('step-1').style.display='none'; document.getElementById('step-2').style.display='flex';">我是酒客 (推门进入)</button>
+    <h1 style="color:var(--pink); font-size: 2.8rem; text-shadow: 6px 6px 0 var(--dark); margin-bottom: 30px; letter-spacing: -2px;">SOUL TAVERN</h1>
+    <div id="step-1-ui" class="setup-box">
+        <input type="text" id="nick-in" class="setup-input" placeholder="输入玩家代号..." autocomplete="off">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button class="p-btn pink" style="padding: 15px 0;" onclick="initHardwareAndStart('host')">创建房间</button>
+            <button class="p-btn" style="padding: 15px 0;" onclick="showJoin('join')">输入口令进入</button>
+        </div>
+        <button class="p-btn purple" style="padding: 12px 0; margin-top: 5px;" onclick="showJoin('companion')">疗愈师通道</button>
+        <button class="p-btn gold" id="rejoin-btn" style="display:none;" onclick="initHardwareAndStart('rejoin')">回到灵魂频道</button>
     </div>
-    
-    <div id="step-2" style="width:100%; max-width:280px; display:none; flex-direction:column; gap:10px;">
-        <input type="text" id="id-in" class="setup-input" placeholder="输入疗愈师的酒馆口令..." autocomplete="off">
-        <div style="display:flex; gap:10px;">
-            <button class="p-btn" style="height:50px;" onclick="document.getElementById('step-2').style.display='none'; document.getElementById('step-1').style.display='flex';">返回</button>
-            <button class="p-btn gold" style="height:50px;" onclick="initRoom('guest')">推门</button>
+    <div id="step-2-ui" class="setup-box" style="display:none;">
+        <input type="text" id="id-in" class="setup-input" placeholder="输入6位灵魂口令..." autocomplete="off">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 15px;">
+            <button class="p-btn" onclick="hideJoin()">返回</button>
+            <button class="p-btn gold" onclick="initHardwareAndStart(pendingMode)">灵魂推门</button>
         </div>
     </div>
 </div>
 
-<div class="header">
-    <div class="status-bar" style="display:flex; justify-content: space-between; align-items: center;">
-        <div class="status-text" id="status-text">酒馆营业中 | 自由交流</div>
-        <div style="font-size:0.6rem; color:#555;">ROOM: <span id="room-id">----</span></div>
-    </div>
-    <div class="queue-bar" id="queue-bar">
-        </div>
+<div id="v-gate" style="position:fixed; inset:0; background:var(--dark); z-index:38000; display:none; flex-direction:column; align-items:center; justify-content:center;">
+    <h2 style="color:var(--gold); font-size: 1.5rem; margin-bottom: 20px; animation: pulse 1.5s infinite;">AUDIO SYNC...</h2>
+    <p style="color:#666; font-size: 0.7rem; margin-bottom: 30px;">正在建立灵魂网络</p>
 </div>
 
-<div class="stage" id="stage">
-    <div id="danmaku-container"></div>
-    
-    <div id="idle-state" style="color:#444; font-size: 0.9rem; letter-spacing: 1px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
-        <div style="font-size: 3rem; opacity: 0.5;">🔥</div>
-        <div>篝火燃烧中，等待下一位诉说者...</div>
-    </div>
+<div class="player-bar" id="p-bar"></div>
+<div class="main-deck" id="deck"></div>
 
-    <div class="card-container" id="card-container">
-        <div class="card" id="the-card">
-            <div class="card-face card-front">
-                <div style="font-size:3rem; margin-bottom:20px;">🃏</div>
-                <div style="font-size:0.9rem; color:#888;">正在抽取灵魂档案...</div>
-            </div>
-            <div class="card-face card-back" id="card-back-face">
-                <div class="card-title" id="c-title">问题卡</div>
-                <div class="card-content" id="c-content">描述一个你最恨自己的瞬间。</div>
-            </div>
-        </div>
+<div id="focused-overlay">
+    <div class="focused-card" id="f-card">
+        <div style="color:var(--pink); font-weight: 900; font-size: 0.7rem; border-bottom: 2px dashed #ccc; padding-bottom: 10px; width: 100%;">[ SOUL FILE ]</div>
+        <div id="q-text" style="font-size: 1rem; line-height: 1.5; font-weight: bold; color: #111; margin: 20px 0;"></div>
+        <div id="vote-display" style="display:flex; gap:10px; font-size:1.5rem; height: 35px; align-items: center;"></div>
+        <button id="f-btn" class="p-btn gold" style="width:100%; height:50px; flex:none; margin-top: 15px;" disabled onclick="confirmEnd()">等待通过</button>
     </div>
 </div>
 
 <div class="footer-console">
-    <div class="btn-row" id="guest-controls" style="display:none;">
-        <button class="p-btn" id="queue-btn" onclick="toggleQueue()">排队上台</button>
-        <button class="p-btn gold" id="light-btn" onmousedown="sendParticle()" ontouchstart="sendParticle()">✨ 送出光芒</button>
-        <button class="p-btn pink" id="res-btn" onclick="sendRipple()">💓 我也经历过</button>
-    </div>
-    
-    <div class="btn-row" id="healer-controls" style="display:none;">
-        <button class="p-btn active-mic" id="h-mic" onclick="toggleMic()">🎙️ 疗愈师麦克风</button>
-        <button class="p-btn blue" onclick="nextInQueue()">邀请下一位</button>
-        <button class="p-btn gold" onclick="drawHealerCard()">🔮 抽取疗愈卡</button>
-    </div>
-
-    <div class="btn-row" id="speaker-controls" style="display:none;">
-        <button class="p-btn active-mic" id="s-mic" onclick="toggleMic()">🎙️ 我的麦克风</button>
-        <button class="p-btn gold" id="s-draw" onclick="drawQuestionCard()">抽取问题卡</button>
-        <button class="p-btn" onclick="finishSpeaking()">结束发言</button>
-    </div>
-
+    <div id="c-msgs"></div>
     <div class="chat-input-bar">
-        <input type="text" id="c-in" placeholder="递一张匿名纸条..." onkeypress="if(event.keyCode==13) sendDanmaku()">
-        <button class="send-btn" onclick="sendDanmaku()">发送</button>
+        <input type="text" id="c-in" placeholder="吐槽..." onkeypress="if(event.keyCode==13) sendChat()">
+    </div>
+    <div class="btn-grid" id="main-btns">
+        <button id="mic-btn" class="p-btn" onclick="toggleMic()">麦克风:关</button>
+        <button id="h-btn" class="p-btn green" onclick="vote('H')" disabled>👍 诚实</button>
+        <button id="comp-btn" class="p-btn purple" style="display:none;" onclick="toggleCompanionSpeech()">介入局</button>
+        <button id="l-btn" class="p-btn pink" onclick="vote('L')" disabled>👎 撒谎</button>
+        <button id="start-btn" class="p-btn gold" style="display:none; flex:2;" onclick="hostStartGame()">开启大审判</button>
     </div>
 </div>
 
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    // 40张 问题卡 (用于酒客)
+    // 40题完整阵列装载
     const questions = [
-        "描述一个你最恨自己的瞬间。","分享一个你最绝望、觉得自己撑不下去的时刻。","哪一次你为了合群，假装自己很开心？","回忆一个你觉得“这辈子也就这样了”的瞬间。","如果必须切断一段现有关系，你会放弃谁？为什么？",
-        "说出一个你最不敢向别人承认的自私念头。","你在哪段感情里，觉得自己变得最面目可憎？","你曾用什么方式，残忍地推开过一个真正在乎你的人？","分享一个你明知道是错的，但依然去做了的决定。","你心里一直没有原谅的那个人是谁？",
-        "描述一个你在深夜里会反复咀嚼的遗憾。","你曾在什么事情上，感受过彻头彻尾的无能为力？","哪一句无心的话，曾像刀子一样扎进你心里？","你最害怕自己最终变成什么样的人？","为了获得别人的认可，你丢掉过什么最宝贵的东西？"
-    ]; // 截取前15个做演示，系统自动循环
-
-    // 40张 疗愈师神谕卡 (用于老板解读)
-    const oracleCards = [
-        { title: "【01】破碎之镜", desc: "你放不下的不是他，而是镜子里那个曾经被偏爱的自己。重建自我，而非修补镜子。" },
-        { title: "【07】深渊回响", desc: "恐惧的本质是你在吓自己。当你凝视深渊，其实深渊也在等待你的拥抱。" },
-        { title: "【13】蜕皮期", desc: "成长伴随着撕裂的痛楚。你不是在失去，你只是在褪去不适合你的旧壳。" },
-        { title: "【22】倒吊人", desc: "当你觉得无路可走时，试着把世界倒过来看。停止挣扎，臣服于当下的停滞。" },
-        { title: "【39】愚者的行囊", desc: "你背负了太多别人的期待。清空行囊，你随时拥有从零开始的特权。" }
+        "找一位玩家问ta“你觉得我是一个什么样的人？”", "描述一个你最恨自己的瞬间。", "如果玩家这几个人里必须断绝一段关系，你会最先放弃谁？", "回忆一个你“这辈子也就这样了”念头的瞬间。", "你觉得你灵魂里最“贪婪”的那部分，如果放出来，它会做出什么事？", "如果你明天陷入绝境，你觉得在座谁会是那个“避难所”？", "找一位玩家问“说出一个你观察到我身上的缺点”", "在座谁的离去，会让你觉得我们这个圈子彻底失去了存在的意义？", "找一位玩家问“你曾为了维护我们的面子，吞下了哪句最想爆粗口的真心话？”", "如果生命交换24小时，你最想体验在座哪位的哪一段人生？", "如果时间重来，你最想改变的一件事是什么？", "分享你最绝望的瞬间。", "撇开工作上的联系，你觉得我们可以成为好朋友吗？", "如果你有一张1000万的彩彩彩票，必须送出去，你会给在座的谁？", "谁是你曾经最看不起、但现在由衷佩服的人？", "如果你明天就要消失，你最想坦白的一个关于自己的负面真相是什么？", "找一位玩家问“你觉得我性格里的哪部分，其实是你一直都看不惯？”", "描述一个你觉得你最“孤独”时刻。", "如果我们合伙干一件坏事，你会选谁当搭档？", "你觉得我们这段关系的“保质期”取决于什么？", "在座谁的哪句评价，曾让你感到背脊发凉？", "如果可以从某人身上“偷”走一种天赋，你最想偷谁的？", "说出一个你一直没敢向我确认的、关于我的负面传闻。", "如果给我们的交情设计一个重启键，你最想回到哪一个点？", "你曾在哪一瞬间，觉得我其实是一个极其自私的人？", "你觉得我们这个圈子里，谁是那个最会“演戏”的伪装者？", "你觉得你这辈子最对不起的人是谁？为什么？", "在座的人里，谁最像是一个“能量黑洞”？", "如果我们被关进密室，只能活一个人，最后活下来的会是谁？", "你觉得我身上最“矫情”的地方在哪里？", "在座谁最让你感到“共振”？", "描述一个你觉得我最“面目可憎”的瞬间。", "如果现在就是终点，你在星球上留下的最真实痕迹是什么？", "如果要一起去流亡，你觉得谁会是最先崩溃的人？", "哪一次你感到极其强烈的“归属感”", "如果你死后能保留一段记忆，你会保留关于谁的哪段记忆？", "描述一个你觉得我身上最廉价的品质。", "在座的人里，谁是你最想深交但觉得气场不合的人？", "说出一个你删除的一条信息，为什么删除？", "谁是你眼中那个除了资源其实一无处的蠢货？"
     ];
-
+    const emojis = ["🃏", "💀", "👁️", "🌙", "🧿", "🔥", "🔮", "🎭"];
     const iceCfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.anyfirewall.com:3478' }] };
 
-    // 房间核心状态机 (Single Source of Truth)
-    let state = {
-        phase: 'IDLE', // IDLE, SPEAKING, HEALING
-        queue: [],     // 排队名单 [{id, nick}]
-        currentSpeaker: null, // 当前主讲人 {id, nick}
-        currentCard: null,    // 当前展示的卡牌内容
-        isHealerCard: false
-    };
-
-    let peer, conns = [], myNick = "", isHealer = false;
-    let localStream = null, isMuted = false;
+    let peer, conns = [], myNick = "", isHost = false, isCompanion = false;
+    let players = [], flipped = [], turnIdx = 0, isShowing = false, curQIdx = -1;
+    let votes = [], liarId = "", gameState = 'WAIT', localStream = null, isMuted = true, isCompanionSpeechActive = false;
     let audioUnlocked = false;
 
-    // --- 硬件与连接初始化 ---
-    async function initRoom(role) {
-        if(!audioUnlocked) { try { let a = new AudioContext(); a.createOscillator().start(0); audioUnlocked=true; } catch(e){} }
+    window.onload = () => { if(localStorage.getItem('ps_nick_v44')) document.getElementById('rejoin-btn').style.display='block'; };
+
+    function showJoin(m){ pendingMode=m; document.getElementById('step-1-ui').style.display='none'; document.getElementById('step-2-ui').style.display='flex'; }
+    function hideJoin(){ document.getElementById('step-1-ui').style.display='flex'; document.getElementById('step-2-ui').style.display='none'; }
+
+    // 优化：点击瞬间解锁系统底层音频并初始化硬件和网络
+    async function initHardwareAndStart(mode) {
+        if(!audioUnlocked) {
+            try {
+                // 强制唤醒音轨
+                let a = new AudioContext();
+                let o = a.createOscillator();
+                o.connect(a.destination); o.start(0); o.stop(0.01);
+                audioUnlocked = true;
+            } catch(e) { console.log("Audio activation bypassed"); }
+        }
         
-        myNick = document.getElementById('nick-in').value || (role==='healer'?"主理人":"匿名酒客");
-        isHealer = (role === 'healer');
+        if(mode === 'rejoin') { myNick = localStorage.getItem('ps_nick_v44'); document.getElementById('id-in').value = localStorage.getItem('ps_room_v44'); isCompanion = localStorage.getItem('ps_iscomp_v44')==='true'; }
+        else { myNick = document.getElementById('nick-in').value || "ANON"; isHost = (mode==='host'); isCompanion = (mode==='companion'); }
         
-        document.getElementById('setup').style.display = 'none';
+        document.getElementById('setup').style.display = 'none'; 
+        document.getElementById('v-gate').style.display = 'flex';
         
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-            localStream.getAudioTracks()[0].enabled = false; // 初始全员静音
-        } catch(e) { console.warn("Mic auth failed."); }
+            localStream.getAudioTracks()[0].enabled = false; // 初始静音
+        } catch(e) { appendChat("SYSTEM", "麦克风未授权，您将只能吐槽。"); }
 
         peer = new Peer({ config: iceCfg, secure: true });
-        
         peer.on('open', id => {
-            document.getElementById('room-id').innerText = id;
-            if(isHealer) {
-                localStream.getAudioTracks()[0].enabled = true; // 疗愈师永远开麦
-                syncState(); 
-            } else {
-                let rid = document.getElementById('id-in').value.trim();
-                let c = peer.connect(rid, { reliable: true });
-                setupConn(c);
-            }
+            document.getElementById('v-gate').style.display = 'none';
+            if(isHost) { 
+                players = [{id, nick: myNick, avatar: emojis[0], isCompanion, lieVotes: 0, isSpeaking: false}]; 
+                document.getElementById('start-btn').style.display = 'flex'; 
+                sync(); saveLocal(id); 
+            } 
+            else { connect(document.getElementById('id-in').value.trim()); saveLocal(document.getElementById('id-in').value.trim()); }
         });
         peer.on('connection', setupConn);
-        peer.on('call', call => { call.answer(localStream); handleVoice(call); });
+        peer.on('call', call => { call.answer(localStream); handleVoiceStream(call); });
+    }
+
+    function saveLocal(r){ localStorage.setItem('ps_nick_v44', myNick); localStorage.setItem('ps_room_v44', r); localStorage.setItem('ps_iscomp_v44', isCompanion); }
+
+    function hostStartGame() {
+        if(!isHost) return;
+        let pList = players.filter(p => !p.isCompanion);
+        if(pList.length < 2) { appendChat("SYSTEM", "真实玩家不足2人"); return; }
+        liarId = pList[Math.floor(Math.random() * pList.length)].id;
+        gameState = 'NORMAL';
+        document.getElementById('start-btn').style.display = 'none';
+        sync();
     }
 
     function setupConn(c) {
-        c.on('open', () => { 
-            if(!conns.find(x => x.peer === c.peer)) conns.push(c); 
-            c.send({ type: 'JOIN', id: peer.id, nick: myNick }); 
-            if(localStream) peer.call(c.peer, localStream);
-        });
-        
+        c.on('open', () => { if(!conns.find(x => x.peer === c.peer)) conns.push(c); c.send({type:'JOIN', nick: myNick, isComp: isCompanion}); if(localStream) peer.call(c.peer, localStream); });
         c.on('data', data => {
-            // 疗愈师处理中心逻辑
-            if(isHealer) {
-                if(data.type === 'JOIN') { syncState(); }
-                if(data.type === 'REQ_QUEUE') { 
-                    if(!state.queue.find(p => p.id === data.id)) state.queue.push({id: data.id, nick: data.nick}); 
-                    syncState(); 
-                }
-                if(data.type === 'DEQUEUE') { state.queue = state.queue.filter(p => p.id !== data.id); syncState(); }
-                if(data.type === 'REQ_FINISH' && state.currentSpeaker?.id === data.id) { 
-                    state.phase = 'IDLE'; state.currentSpeaker = null; state.currentCard = null; syncState(); 
-                }
-                if(data.type === 'DRAW_CARD' && state.currentSpeaker?.id === data.id) {
-                    state.currentCard = questions[Math.floor(Math.random()*questions.length)];
-                    state.isHealerCard = false; syncState();
-                }
+            if(data.type === 'JOIN' && isHost) {
+                players.push({id: c.peer, nick: data.nick, avatar: emojis[players.length % emojis.length], isCompanion: data.isComp, lieVotes: 0, isSpeaking: false});
+                c.send({type: 'PEER_LIST', list: players.map(p => p.id)}); sync();
             }
-            
-            // 全员接收同步指令
-            if(data.type === 'SYNC') { 
-                state = data.state; renderUI(); 
+            else if(data.type === 'SYNC') {
+                players = data.players; flipped = data.flipped; turnIdx = data.turnIdx;
+                isShowing = data.isShowing; votes = data.votes; curQIdx = data.curQIdx;
+                gameState = data.gameState; handleCompanionSpeech(data.compSpeech);
+                applyState();
             }
-            if(data.type === 'DANMAKU') { spawnDanmaku(data.msg); }
-            if(data.type === 'PARTICLE') { spawnParticle(); }
-            if(data.type === 'RIPPLE') { spawnRipple(); }
+            else if(data.type === 'COMPANION_SPEECH' && isHost) { handleCompanionSpeech(data.active); sync(); }
+            else if(data.type === 'VOTE' && isHost) { votes.push({from: data.from, type: data.val}); if(data.val === 'L') players[turnIdx].lieVotes++; sync(); }
+            else if(data.type === 'DRAW' && isHost) { isShowing = true; curQIdx = data.index; flipped.push(data.index); sync(); }
+            else if(data.type === 'FINISH' && isHost) nextTurn();
+            else if(data.type === 'VOICE_STATE') { let p = players.find(x => x.id === data.from); if(p){ p.isSpeaking = data.state; renderPlayers(); } }
+            else if(data.type === 'CHAT') { appendChat(data.nick, data.msg); if(isHost) broadcast(data); }
         });
-        
-        c.on('close', () => { 
-            if(isHealer) { state.queue = state.queue.filter(p => p.id !== c.peer); syncState(); } 
-        });
+        c.on('close', () => { if(isHost) handleDisconnect(c.peer); });
     }
 
-    function handleVoice(call) {
+    function toggleMic() {
+        if(!localStream) return;
+        isMuted = !isMuted;
+        localStream.getAudioTracks()[0].enabled = !isMuted;
+        document.getElementById('mic-btn').innerText = isMuted ? "麦克风:关" : "麦克风:开";
+        document.getElementById('mic-btn').className = isMuted ? "p-btn" : "p-btn active";
+        let me = players.find(p => p.id === peer.id);
+        if(me) { me.isSpeaking = !isMuted; renderPlayers(); }
+        if(isHost) sync(); else conns.forEach(c => c.send({type:'VOICE_STATE', from:peer.id, state:!isMuted}));
+    }
+
+    function handleVoiceStream(call) {
         call.on('stream', stream => {
-            let a = document.createElement('audio'); a.autoplay=true; a.srcObject=stream;
+            let a = document.createElement('audio'); a.autoplay=true; a.setAttribute('playsinline','true'); a.srcObject=stream;
             document.getElementById('audio-bridge').appendChild(a);
         });
     }
 
-    // --- 状态同步与 UI 渲染 (核心) ---
-    function syncState() {
-        if(isHealer) { conns.forEach(c => { if(c.open) c.send({type: 'SYNC', state}); }); renderUI(); }
+    function toggleCompanionSpeech() {
+        if(!isCompanion) return;
+        isCompanionSpeechActive = !isCompanionSpeechActive;
+        const data = { type: 'COMPANION_SPEECH', active: isCompanionSpeechActive };
+        if(isHost) { handleCompanionSpeech(isCompanionSpeechActive); sync(); }
+        else { conns.forEach(c => c.send(data)); }
     }
 
-    function renderUI() {
-        // 1. 渲染排队栏
-        const qBar = document.getElementById('queue-bar');
-        qBar.innerHTML = state.queue.map(p => `<div class="queue-item ${p.id===peer.id?'active':''}">${p.nick}</div>`).join('');
-        if(state.queue.length === 0) qBar.innerHTML = `<div class="queue-item">当前无人在排队</div>`;
+    function handleCompanionSpeech(active) {
+        document.getElementById('companion-notice').style.display = active ? 'flex' : 'none';
+        isCompanionSpeechActive = active;
+        document.getElementById('comp-btn').innerText = active ? "系统重置中" : "介入局";
+        document.getElementById('comp-btn').className = active ? "p-btn active" : "p-btn purple";
+    }
 
-        // 2. 渲染状态文本
-        const statusEl = document.getElementById('status-text');
-        if(state.phase === 'IDLE') statusEl.innerText = "酒馆营业中 | 自由倾听";
-        else if(state.phase === 'SPEAKING') statusEl.innerText = `🎙️ [${state.currentSpeaker.nick}] 正在讲述...`;
-        else if(state.phase === 'HEALING') statusEl.innerText = `🔮 疗愈师正在解读...`;
+    function applyState() {
+        const overlay = document.getElementById('focused-overlay');
+        if(isShowing && curQIdx !== -1) { overlay.style.display = 'flex'; document.getElementById('q-text').innerText = questions[curQIdx]; } else { overlay.style.display = 'none'; }
+        if(isCompanion) { document.getElementById('comp-btn').style.display = 'flex'; document.getElementById('h-btn').style.display = 'none'; document.getElementById('l-btn').style.display = 'none'; }
+        renderPlayers(); renderDeck(); updateTurnStatus(); updateVoteDisplay();
+    }
 
-        // 3. 控制面板显示权限 (权限彻底隔离)
-        document.getElementById('guest-controls').style.display = 'none';
-        document.getElementById('healer-controls').style.display = 'none';
-        document.getElementById('speaker-controls').style.display = 'none';
-
-        let isMyTurn = (state.currentSpeaker?.id === peer.id);
-
-        if(isHealer) {
-            document.getElementById('healer-controls').style.display = 'flex';
-        } else if (isMyTurn) {
-            document.getElementById('speaker-controls').style.display = 'flex';
-            // 只有轮到我，且没抽卡时才能抽
-            document.getElementById('s-draw').disabled = (state.currentCard !== null);
-        } else {
-            document.getElementById('guest-controls').style.display = 'flex';
-            let inQueue = state.queue.find(p=>p.id===peer.id);
-            document.getElementById('queue-btn').innerText = inQueue ? "取消排队" : "排队上台";
-            // 只有有人讲话时，才能发光和共振
-            document.getElementById('light-btn').disabled = (state.phase === 'IDLE');
-            document.getElementById('res-btn').disabled = (state.phase === 'IDLE');
-        }
-
-        // 4. 麦克风物理锁死
-        if(localStream) {
-            if(isHealer) localStream.getAudioTracks()[0].enabled = true; // 疗愈师常开
-            else if(isMyTurn) localStream.getAudioTracks()[0].enabled = !isMuted; // 讲述者按键控制
-            else localStream.getAudioTracks()[0].enabled = false; // 其他人强制闭麦
-        }
-
-        // 5. 渲染中央舞台卡牌
-        const cardContainer = document.getElementById('card-container');
-        const idleState = document.getElementById('idle-state');
-        const card = document.getElementById('the-card');
-        const cardBack = document.getElementById('card-back-face');
-
-        if(state.currentCard) {
-            idleState.style.display = 'none';
-            cardContainer.style.display = 'block';
-            
-            if(state.isHealerCard) {
-                cardBack.className = "card-face card-back healer-card";
-                document.getElementById('c-title').innerText = "🔮 " + state.currentCard.title;
-                document.getElementById('c-content').innerHTML = `<div class="healer-desc">${state.currentCard.desc}</div>`;
-            } else {
-                cardBack.className = "card-face card-back";
-                document.getElementById('c-title').innerText = "问题卡";
-                document.getElementById('c-content').innerText = state.currentCard;
-            }
-            
-            // 触发翻牌动画
-            setTimeout(() => card.classList.add('flipped'), 100);
-        } else {
-            card.classList.remove('flipped');
-            setTimeout(() => { cardContainer.style.display = 'none'; idleState.style.display = 'flex'; }, 600);
+    function sync() { if(isHost) broadcast({type:'SYNC', players, flipped, turnIdx, isShowing, votes, curQIdx, gameState, compSpeech: isCompanionSpeechActive}); applyState(); }
+    function broadcast(d) { conns.forEach(c => { if(c.open) c.send(d); }); }
+    function nextTurn() { if(!isHost) return; do { turnIdx = (turnIdx + 1) % players.length; } while (players[turnIdx]?.isCompanion); isShowing = false; votes = []; sync(); }
+    function draw(i) { if(players[turnIdx]?.id !== peer.id || isShowing || isCompanion) return; if(isHost) { isShowing = true; curQIdx = i; flipped.push(i); sync(); } else { conns.forEach(c => c.send({type:'DRAW', index: i})); } }
+    function renderPlayers() { document.getElementById('p-bar').innerHTML = players.map((p, i) => `<div class="p-item"><div class="p-avatar ${i===turnIdx?'active':''} ${p.isSpeaking?'speaking':''} ${p.isCompanion?'companion':''}"><div class="emoji">${p.avatar}</div></div><div class="name">${p.isCompanion?'[陪]':''}${p.nick}</div></div>`).join(''); }
+    function updateTurnStatus() { let isM = (players[turnIdx]?.id === peer.id); document.getElementById('h-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); document.getElementById('l-btn').disabled = isM || !isShowing || isCompanion || votes.find(v=>v.from===peer.id); }
+    function renderDeck() { let d = document.getElementById('deck'); d.innerHTML = ""; for(let i=0; i<40; i++) { d.innerHTML += `<div class="card ${flipped.includes(i)?'flipped':''}" onclick="draw(${i})"></div>`; } }
+    function confirmEnd() { if(isHost) nextTurn(); else conns.forEach(c => c.send({type:'FINISH'})); }
+    function vote(val) { if(isHost) { votes.push({from: peer.id, type: val}); if(val==='L') players[turnIdx].lieVotes++; sync(); } else { conns.forEach(c => c.send({type:'VOTE', from: peer.id, val})); } }
+    function updateVoteDisplay() {
+        const box = document.getElementById('vote-display'); box.innerHTML = "";
+        votes.forEach(v => { box.innerHTML += `<span style="color:${v.type==='H'?'var(--green)':'var(--pink)'}; animation: glitch-pulse 0.2s 1;">${v.type==='H'?'👍':'👎'}</span>`; });
+        const b = document.getElementById('f-btn');
+        if(players[turnIdx]?.id === peer.id) {
+            const others = players.filter(p => !p.isCompanion && p.id !== peer.id);
+            b.disabled = votes.length < others.length;
+            b.innerText = b.disabled ? `等待同频(${votes.length}/${others.length})` : "回答完毕";
         }
     }
-
-    // --- 业务操作指令 ---
-    function toggleQueue() {
-        let inQ = state.queue.find(p=>p.id===peer.id);
-        conns.forEach(c => c.send({type: inQ ? 'DEQUEUE' : 'REQ_QUEUE', id: peer.id, nick: myNick}));
-    }
-
-    function nextInQueue() {
-        if(!isHealer) return;
-        if(state.queue.length === 0) { alert("队列为空"); return; }
-        let nextP = state.queue.shift();
-        state.currentSpeaker = nextP;
-        state.phase = 'SPEAKING';
-        state.currentCard = null; // 重置卡牌
-        syncState();
-    }
-
-    function drawQuestionCard() {
-        conns.forEach(c => c.send({type: 'DRAW_CARD', id: peer.id}));
-    }
-
-    function drawHealerCard() {
-        if(!isHealer) return;
-        state.phase = 'HEALING';
-        state.currentCard = oracleCards[Math.floor(Math.random() * oracleCards.length)];
-        state.isHealerCard = true;
-        syncState();
-    }
-
-    function finishSpeaking() {
-        conns.forEach(c => c.send({type: 'REQ_FINISH', id: peer.id}));
-    }
-
-    function toggleMic() {
-        isMuted = !isMuted;
-        let btn = isHealer ? document.getElementById('h-mic') : document.getElementById('s-mic');
-        btn.innerText = isMuted ? "🎙️ 麦克风已关" : "🎙️ 麦克风收音中";
-        btn.className = isMuted ? "p-btn" : "p-btn active-mic";
-        renderUI(); // 更新物理轨道
-    }
-
-    // --- 光遇式交互与弹幕 ---
-    function sendParticle() {
-        spawnParticle();
-        conns.forEach(c => { if(c.open) c.send({type: 'PARTICLE'}); });
-    }
-    function spawnParticle() {
-        let p = document.createElement('div'); p.className = 'particle';
-        p.style.left = (Math.random() * 80 + 10) + '%';
-        document.getElementById('stage').appendChild(p);
-        setTimeout(() => p.remove(), 2000);
-    }
-
-    function sendRipple() {
-        spawnRipple();
-        conns.forEach(c => { if(c.open) c.send({type: 'RIPPLE'}); });
-    }
-    function spawnRipple() {
-        let r = document.createElement('div'); r.className = 'ripple';
-        document.getElementById('card-container').appendChild(r);
-        setTimeout(() => r.remove(), 1500);
-    }
-
-    function sendDanmaku() {
-        let val = document.getElementById('c-in').value.trim();
-        if(!val) return;
-        spawnDanmaku(val);
-        conns.forEach(c => { if(c.open) c.send({type: 'DANMAKU', msg: val}); });
-        document.getElementById('c-in').value = "";
-    }
-    function spawnDanmaku(text) {
-        let d = document.createElement('div'); d.className = 'danmaku';
-        d.innerText = text;
-        d.style.top = (Math.random() * 120) + 'px';
-        document.getElementById('danmaku-container').appendChild(d);
-        setTimeout(() => d.remove(), 8000);
-    }
+    function connect(rid) { let c = peer.connect(rid, { reliable: true }); setupConn(c); }
+    function sendChat() { let i = document.getElementById('c-in'); if(!i.value.trim()) return; let d = {type:'CHAT', nick: myNick, msg: i.value}; if(isHost) broadcast(d); else conns.forEach(c => c.send(d)); i.value = ""; appendChat(myNick, d.msg); }
+    function appendChat(n, m) { let b = document.getElementById('c-msgs'); b.innerHTML += `<div><span style="color:#555">[<span style="color:var(--gold)">${n}</span>]</span> <span style="color:#ddd">${m}</span></div>`; b.scrollTop = b.scrollHeight; }
+    function handleDisconnect(id) { let idx = players.findIndex(p => p.id === id); if(idx !== -1) { players.splice(idx, 1); sync(); } }
 </script>
 </body>
 </html>
