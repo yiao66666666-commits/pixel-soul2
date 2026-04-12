@@ -3,134 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - 实战内测版</title>
+    <title>SPEAK - BALATRO EDITION</title>
     <style>
-        :root { --bg: #0a0510; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --dark: #000; }
+        :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --dark: #000; --fire: #3d1563; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* 顶部状态向导 */
-        #guide-bar { height: 32px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem; z-index: 2000; letter-spacing: 1px; }
 
-        /* 玩家列表区 */
-        .player-bar { height: 75px; padding: 8px 15px; display: flex; gap: 12px; background: var(--dark); border-bottom: 2px solid #222; overflow-x: auto; }
-        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 50px; opacity: 0.5; transition: 0.3s; }
-        .p-avatar { width: 38px; height: 38px; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.1rem; }
-        .p-item.active { opacity: 1; transform: scale(1.1); }
-        .p-item.active .p-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .name { font-size: 0.55rem; color: #888; margin-top: 4px; white-space: nowrap; }
-
-        /* 主舞台：扑克牌滑动区 */
-        .stage { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; justify-content: center; }
-        .deck-scroll { 
-            display: flex; gap: 14px; padding: 30px; overflow-x: scroll; 
-            scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+        /* --- 小丑牌风格登录页 --- */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 50000; background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            /* 迷幻火焰背景动画 */
+            background: radial-gradient(circle at center, #1a0826 0%, #050505 100%);
         }
+        
+        /* 模拟 Balatro 背景流体感 */
+        .plasma-bg {
+            position: absolute; inset: 0; z-index: -1; opacity: 0.4;
+            background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 10%, #3d1563 20%, #050505 30%);
+            background-size: 200% 200%; animation: plasma 20s linear infinite;
+        }
+        @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+
+        .login-box { text-align: center; z-index: 10; width: 85%; max-width: 320px; }
+        
+        .balatro-title {
+            font-size: 4rem; font-weight: 900; color: #fff; letter-spacing: -5px;
+            text-shadow: 4px 4px 0 var(--pink), -2px -2px 0 var(--blue);
+            animation: title-float 3s ease-in-out infinite; margin-bottom: 50px;
+        }
+        @keyframes title-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-15px) rotate(2deg); } }
+
+        .input-wrap { margin-bottom: 20px; position: relative; }
+        .balatro-input {
+            width: 100%; padding: 15px; background: #000; border: 3px solid #333;
+            color: var(--gold); font-family: inherit; font-size: 1.2rem; text-align: center;
+            outline: none; transition: 0.3s;
+        }
+        .balatro-input:focus { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); }
+
+        .run-btn {
+            width: 100%; padding: 18px; background: var(--pink); border: 4px solid #fff;
+            color: #fff; font-size: 1.5rem; font-weight: 900; cursor: pointer;
+            box-shadow: 6px 6px 0 #000; transition: 0.1s; position: relative;
+        }
+        .run-btn:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0 #000; }
+        .run-btn::after { content: '>'; position: absolute; left: 15px; opacity: 0.5; }
+
+        /* 屏幕闪烁特效 */
+        .flash { position: fixed; inset: 0; background: #fff; z-index: 60000; display: none; }
+
+        /* --- 游戏主界面 (承袭 V44.8) --- */
+        #guide-bar { height: 32px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem; }
+        .player-bar { height: 80px; padding: 10px; display: flex; gap: 12px; background: var(--dark); border-bottom: 2px solid #222; }
+        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 55px; opacity: 0.4; }
+        .p-item.active { opacity: 1; transform: scale(1.1); }
+        .p-avatar { width: 40px; height: 40px; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #111; font-size: 1.2rem; }
+        .active .p-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+        .stage { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; justify-content: center; }
+        .deck-scroll { display: flex; gap: 16px; padding: 20px; overflow-x: scroll; scroll-snap-type: x mandatory; }
         .deck-scroll::-webkit-scrollbar { display: none; }
         .poker-card { 
-            flex: 0 0 110px; height: 154px; /* 扑克牌黄金比例 */
-            background: #2a104a; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); 
-            scroll-snap-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.7);
-            background-image: repeating-linear-gradient(45deg, #3d1563, #3d1563 10px, #2a104a 10px, #2a104a 20px);
+            flex: 0 0 110px; height: 154px; /* 5:7 扑克比例 */
+            background: #2a104a; border-radius: 6px; border: 2px solid rgba(255,255,255,0.2); 
+            scroll-snap-align: center; transition: 0.3s;
+            background-image: repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px);
         }
-        .poker-card.flipped { opacity: 0.05; pointer-events: none; transform: scale(0.9); }
+        .poker-card.flipped { opacity: 0.05; pointer-events: none; }
 
-        /* 问题弹出层 */
         #focus-board { 
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
-            width: 88%; background: #fefefe; color: #111; border: 4px solid #000; border-radius: 12px; 
-            padding: 20px; display: none; flex-direction: column; z-index: 3000; box-shadow: 12px 12px 0 #000;
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 88%; 
+            background: #fff; color: #111; border: 4px solid #000; padding: 20px; 
+            display: none; flex-direction: column; z-index: 3000; box-shadow: 10px 10px 0 #000;
         }
-        #q-text { font-size: 1.05rem; font-weight: bold; text-align: center; margin-bottom: 15px; min-height: 60px; display: flex; align-items: center; justify-content: center; line-height: 1.5; }
 
-        /* 指定转移选择器 */
-        #transfer-selector { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .selector-box { background: #1a1a1a; border: 2px solid var(--pink); padding: 25px; width: 85%; border-radius: 8px; }
-        .target-opt { padding: 15px; border: 1px solid #333; margin: 10px 0; text-align: center; color: var(--gold); font-weight: bold; border-radius: 4px; }
+        .footer-console { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); }
+        .input-row { height: 40px; background: #111; display: flex; }
+        #c-in { flex: 1; background: transparent; border: none; color: #fff; padding: 0 15px; font-family: inherit; }
 
-        /* 底部操作控制台 */
-        .footer-console { height: 280px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); background: rgba(0,0,0,0.6); }
-        .input-row { height: 42px; display: flex; background: #111; border-bottom: 1px solid #222; }
-        #c-in { flex: 1; background: transparent; border: none; color: #fff; padding: 0 15px; font-size: 0.8rem; outline: none; }
-
-        .btn-panel { height: 95px; display: flex; padding: 10px; gap: 8px; align-items: center; }
-        .ctrl-btn { flex: 1; height: 60px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 6px; font-weight: bold; font-size: 0.65rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .ctrl-btn.mic { border-radius: 50%; width: 70px; height: 70px; flex: none; font-size: 1.6rem; color: #fff; }
+        .btn-panel { height: 90px; display: flex; padding: 8px; gap: 6px; align-items: center; }
+        .ctrl-btn { flex: 1; height: 55px; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-weight: bold; font-size: 0.6rem; }
+        .ctrl-btn.mic { border-radius: 50%; width: 66px; height: 66px; flex: none; font-size: 1.5rem; color: #fff; }
         .ctrl-btn.mic.on { background: var(--pink); border-color: #fff; box-shadow: 0 0 20px var(--pink); }
-        .ctrl-btn:disabled { opacity: 0.15; filter: grayscale(1); }
-
-        /* 特效粒子 */
-        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 9999; font-size: 2rem; }
-        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
     </style>
 </head>
 <body>
 
-<div id="guide-bar">>>> SPEAK SYSTEM ONLINE</div>
+<div class="flash" id="flash"></div>
 
-<div id="setup" style="position:fixed; inset:0; background:var(--bg); z-index:40000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <h1 style="color:var(--pink); font-size: 3rem; margin-bottom: 40px; letter-spacing: 5px;">SPEAK</h1>
-    <button class="ctrl-btn" style="max-width:240px; height:60px; border-color:var(--gold); color:var(--gold); font-size: 1rem;" onclick="startSession()">ENTER ROOM</button>
-</div>
-
-<div id="transfer-selector">
-    <div class="selector-box">
-        <div style="text-align:center; color:var(--pink); margin-bottom:20px; font-weight:bold;">TARGET ACQUIRED</div>
-        <div id="target-list"></div>
-        <button class="ctrl-btn" style="width:100%; margin-top:10px;" onclick="closeTransfer()">ABORT</button>
+<div id="login-screen">
+    <div class="plasma-bg"></div>
+    <div class="login-box">
+        <div class="balatro-title">SPEAK</div>
+        <div class="input-wrap">
+            <input type="text" id="nick-in" class="balatro-input" placeholder="输入玩家代号" autocomplete="off">
+        </div>
+        <button class="run-btn" onclick="runGame()">RUN GAME</button>
+        <p style="margin-top: 20px; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 2px; opacity: 0.5;">VERSION 44.9 - PIXEL SOUL</p>
     </div>
 </div>
 
+<div id="guide-bar">>>> 系统就绪</div>
 <div class="player-bar" id="p-bar"></div>
 
 <div class="stage">
     <div id="focus-board">
-        <div style="font-size:0.55rem; color:#999; text-align:center; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">[ SENSITIVE ARCHIVE ]</div>
-        <div id="q-text">档案内容加载中...</div>
-        <div id="vote-monitor" style="text-align:center; height:24px; margin-bottom:10px;"></div>
-        <button class="ctrl-btn" style="width:100%; height:40px; border-color:var(--gold); color:var(--gold);" onclick="nextTurn()">DONE / 关闭档案</button>
+        <div style="font-size:0.5rem; color:#999; text-align:center;">[ ARCHIVE OPEN ]</div>
+        <div id="q-text">档案内容...</div>
+        <button class="ctrl-btn" style="width:100%; height:40px; margin-top:10px; border-color:var(--gold); color:var(--gold);" onclick="nextTurn()">关闭档案</button>
     </div>
-    
     <div class="deck-scroll" id="deck"></div>
 </div>
 
 <div class="footer-console">
     <div id="c-msgs"></div>
     <div class="input-row">
-        <input type="text" id="c-in" placeholder="在此吐槽或发表你的看法..." onkeypress="if(event.keyCode==13) sendChat()">
+        <input type="text" id="c-in" placeholder="输入吐槽..." onkeypress="if(event.keyCode==13) sendChat()">
     </div>
     <div class="btn-panel">
-        <button id="like-btn" class="ctrl-btn" onclick="blastEmoji('👍')">👍LIKE</button>
-        <button id="dis-btn" class="ctrl-btn" style="border-color:#444; color:#444;" onclick="blastEmoji('❌')">❌NO</button>
-        
+        <button class="ctrl-btn" onclick="spawnEmoji('👍')">点赞</button>
+        <button class="ctrl-btn" style="border-color:#444;" onclick="spawnEmoji('❌')">不同意</button>
         <button id="mic-btn" class="ctrl-btn mic" onclick="toggleMic()">🎙️</button>
-        
-        <button id="trans-btn" class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);" onclick="openTransfer()">🔄TRANS</button>
-        <button class="ctrl-btn" style="border-color:#444; color:#444;" onclick="nextTurn()">✅SKIP</button>
+        <button class="ctrl-btn" style="border-color:var(--pink); color:var(--pink);">转移</button>
+        <button class="ctrl-btn" onclick="nextTurn()">跳过</button>
     </div>
 </div>
 
 <script>
-    const questions = [
-        "你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？为什么？", "童年里哪一件小事一直负面影响你到现在？",
-        "此时此刻，你生活中最大的焦虑源头究竟是什么？", "生命只剩24小时，你会去见谁？对ta说什么？", "谁曾对你特别好，但后来你们却莫名其妙断了联系？",
-        "你这辈子最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己有多累？(1-10分)", "对最亲近的人撒过的一个谎是什么？",
-        "哪个瞬间，你突然觉得这份工作真的把你榨干了？", "谁发来的微信消息，会让你感到生理性不适？", "哪一天是你打死都不想再经历第二次的？",
-        "如果工资减半但每天准时5点下班且没人找你，你会立刻答应吗？", "假如现在有个按钮能清空关于某一个人的所有记忆，你会按吗？", "如果给你一千万，条件是立刻和父母爱人孩子断绝关系，你换吗？"
-    ]; // 完整版装载34题
-    const botNames = ["阿强", "小美", "老王", "Emma", "大刘"];
+    const questions = ["你觉得这辈子最对不起的人是谁？", "如果你有一件隐身衣你想去做什么？", "明天公司倒闭，你是恐慌还是解脱？", "此时此刻最大的焦虑源头是什么？", "工资减半换准时下班，你换吗？"];
     let players = [], turnIdx = 0, flipped = [], isMicOn = false;
 
-    function startSession() {
-        document.getElementById('setup').style.display = 'none';
-        players = [{nick: '我', isBot: false, avatar: '🃏'}];
-        botNames.forEach(n => players.push({nick: n, isBot: true, avatar: '🤖'}));
-        renderPlayers();
-        renderDeck();
-        setGuide("SLIDE TO SELECT A CARD");
-        checkTurn();
+    function runGame() {
+        const nick = document.getElementById('nick-in').value || "ANON";
+        const flash = document.getElementById('flash');
+        flash.style.display = 'block';
+        
+        setTimeout(() => {
+            document.getElementById('login-screen').style.display = 'none';
+            flash.style.display = 'none';
+            players = [{nick: nick, avatar: '🃏'}, {nick: '玩家B', avatar: '🧿'}, {nick: '玩家C', avatar: '🎭'}];
+            renderPlayers();
+            renderDeck();
+            setGuide("滑动卡池并点击抽牌");
+        }, 200);
     }
 
     function setGuide(txt) { document.getElementById('guide-bar').innerText = `>>> ${txt}`; }
@@ -139,69 +157,27 @@
         document.getElementById('p-bar').innerHTML = players.map((p, i) => `
             <div class="p-item ${i===turnIdx?'active':''}">
                 <div class="p-avatar">${p.avatar}</div>
-                <div class="name">${p.nick}</div>
+                <div style="font-size:0.5rem; margin-top:4px;">${p.nick}</div>
             </div>
         `).join('');
     }
 
     function renderDeck() {
         let d = document.getElementById('deck'); d.innerHTML = "";
-        for(let i=0; i<40; i++) d.innerHTML += `<div class="poker-card ${flipped.includes(i)?'flipped':''}" onclick="userDraw(${i})"></div>`;
-    }
-
-    function userDraw(i) {
-        if(players[turnIdx].isBot || flipped.includes(i)) return;
-        draw(i);
+        for(let i=0; i<40; i++) d.innerHTML += `<div class="poker-card ${flipped.includes(i)?'flipped':''}" onclick="draw(${i})"></div>`;
     }
 
     function draw(i) {
+        if(turnIdx !== 0 || flipped.includes(i)) return;
         flipped.push(i);
-        const q = questions[Math.floor(Math.random()*questions.length)];
-        document.getElementById('q-text').innerText = q;
+        document.getElementById('q-text').innerText = questions[Math.floor(Math.random()*questions.length)];
         document.getElementById('focus-board').style.display = 'flex';
         renderDeck();
-        setGuide(`${players[turnIdx].nick} IS SPEAKING...`);
-        const isMe = !players[turnIdx].isBot;
-        document.getElementById('like-btn').disabled = isMe;
-        document.getElementById('trans-btn').disabled = !isMe;
     }
-
-    function openTransfer() {
-        if(players[turnIdx].isBot) return;
-        const list = document.getElementById('target-list');
-        list.innerHTML = "";
-        players.forEach((p, i) => {
-            if(i !== turnIdx) list.innerHTML += `<div class="target-opt" onclick="doTransfer(${i})">${p.nick}</div>`;
-        });
-        document.getElementById('transfer-selector').style.display = 'flex';
-    }
-
-    function doTransfer(idx) {
-        appendChat("SYS", `${players[turnIdx].nick} 使用转移卡，指向了 ${players[idx].nick}`);
-        turnIdx = idx; closeTransfer(); renderPlayers();
-        draw(flipped[flipped.length-1]);
-    }
-
-    function closeTransfer() { document.getElementById('transfer-selector').style.display = 'none'; }
 
     function toggleMic() {
         isMicOn = !isMicOn;
-        const btn = document.getElementById('mic-btn');
-        btn.classList.toggle('on', isMicOn);
-        setGuide(isMicOn ? "MIC ACTIVE - SPEAK NOW" : "MIC MUTED");
-    }
-
-    function blastEmoji(type) {
-        for(let i=0; i<10; i++) {
-            const p = document.createElement('div');
-            p.className = 'particle'; p.innerText = type;
-            p.style.left = '50%'; p.style.top = '40%';
-            p.style.setProperty('--dx', (Math.random()*600-300)+'px');
-            p.style.setProperty('--dy', (Math.random()*-600-100)+'px');
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), 800);
-        }
-        appendChat("我", `SENT: ${type}`);
+        document.getElementById('mic-btn').classList.toggle('on', isMicOn);
     }
 
     function sendChat() {
@@ -219,18 +195,11 @@
         document.getElementById('focus-board').style.display = 'none';
         turnIdx = (turnIdx + 1) % players.length;
         renderPlayers();
-        document.getElementById('vote-monitor').innerHTML = "";
-        checkTurn();
+        setGuide(turnIdx === 0 ? "轮到你了" : `等待 ${players[turnIdx].nick}`);
     }
 
-    function checkTurn() {
-        if(players[turnIdx].isBot) {
-            setGuide(`WAITING FOR ${players[turnIdx].nick}...`);
-            setTimeout(() => {
-                let idx; do { idx = Math.floor(Math.random()*40); } while(flipped.includes(idx));
-                draw(idx);
-            }, 2000);
-        } else { setGuide("YOUR TURN - DRAW A CARD"); }
+    function spawnEmoji(e) {
+        appendChat("我", `发送了 ${e}`);
     }
 </script>
 </body>
