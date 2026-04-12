@@ -3,224 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - 午夜场</title>
+    <title>SPEAK - 深夜灵魂对话</title>
     <style>
         :root { 
-            --bg-dark: #121212; 
-            --bg-light: #2c2c2c;
-            --moyu-warm: #E2C2A4; /* 治愈系暖色调 */
-            --moyu-accent: #D4A373;
-            --text-main: #F5F5F5;
-            --text-sub: #A0A0A0;
+            --bg: #0A0A0A; 
+            --accent: #FFFFFF;
+            --text-dim: #888888;
+            --card-bg: rgba(255, 255, 255, 0.05);
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a1a 100%);
-            color: var(--text-main); 
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+            background-color: var(--bg);
+            color: #FFFFFF; 
+            font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
             height: 100dvh; 
             display: flex; 
             flex-direction: column; 
             overflow: hidden; 
         }
 
-        /* 顶部导航与品牌标识 */
+        /* 顶部品牌区 */
         .header { 
-            padding: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            z-index: 10;
+            padding: 40px 20px 20px; 
+            text-align: center;
         }
         .brand-logo { 
-            font-size: 1.2rem; 
-            font-weight: 300; 
-            letter-spacing: 2px; 
-            color: var(--moyu-warm);
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            letter-spacing: 5px; 
+            color: var(--accent);
+            text-transform: uppercase;
         }
-        .room-info {
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            background: rgba(255,255,255,0.05);
-            padding: 6px 12px;
-            border-radius: 20px;
+        .subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+            letter-spacing: 2px;
         }
 
-        /* 核心卡牌展示区 */
-        .card-container { 
+        /* 核心卡牌区 */
+        .stage { 
             flex: 1; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            perspective: 1000px;
-            padding: 0 30px;
+            padding: 0 25px;
         }
         
-        .moyu-card { 
+        .speak-card { 
             width: 100%; 
-            max-width: 320px; 
-            aspect-ratio: 3 / 4;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(226, 194, 164, 0.15);
-            border-radius: 24px; 
+            max-width: 340px; 
+            aspect-ratio: 4 / 5;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2px; /* V44 特色的硬朗直角或微圆角 */
             display: flex; 
             flex-direction: column;
             align-items: center; 
             justify-content: center; 
-            padding: 40px 30px; 
+            padding: 40px; 
             text-align: center; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
-            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1), opacity 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
             position: relative;
-            overflow: hidden;
-        }
-
-        .moyu-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 100%;
-            background: linear-gradient(180deg, rgba(226, 194, 164, 0.05) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        .card-number {
-            position: absolute;
-            top: 25px;
-            font-size: 0.75rem;
-            color: var(--moyu-accent);
-            letter-spacing: 1px;
-            opacity: 0.8;
         }
 
         .c-text { 
-            font-size: 1.25rem; 
-            font-weight: 400; 
-            line-height: 1.7; 
-            color: rgba(255,255,255,0.9);
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-size: 1.3rem; 
+            font-weight: 300; 
+            line-height: 1.8; 
+            word-break: break-all;
         }
 
-        /* 卡牌切换动画类 */
-        .card-out { transform: translateY(-40px) scale(0.95); opacity: 0; }
-        .card-in { transform: translateY(40px) scale(0.95); opacity: 0; }
+        /* 状态标记 */
+        .status-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            border-left: 1px solid var(--text-dim);
+            padding-left: 8px;
+        }
 
         /* 底部操作区 */
-        .controls { 
-            padding: 30px 20px 50px; 
+        .dock { 
+            padding: 40px 20px 60px; 
             display: flex; 
-            justify-content: space-around; 
+            justify-content: center; 
             align-items: center;
+            gap: 40px;
         }
 
-        .action-btn { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 8px; 
-            cursor: pointer; 
-            opacity: 0.8;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-        .action-btn:active { transform: scale(0.95); opacity: 1; }
-        
-        .action-icon {
+        /* 极简按钮逻辑 */
+        .btn-icon {
             width: 50px;
             height: 50px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
+            color: var(--text-dim);
+            transition: 0.2s;
         }
 
-        .action-label { font-size: 0.75rem; color: var(--text-sub); letter-spacing: 1px; }
-
-        /* 核心语音按钮 */
-        .mic-wrapper {
-            position: relative;
+        /* 核心语音键 - SPEAK 风格 */
+        .voice-trigger {
+            width: 80px;
+            height: 80px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            position: relative;
         }
         
-        .mic-btn-main { 
-            width: 76px; 
-            height: 76px; 
-            background: linear-gradient(135deg, var(--moyu-accent) 0%, #B07D4B 100%);
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.8rem;
-            color: #121212;
-            box-shadow: 0 10px 25px rgba(212, 163, 115, 0.3);
-            z-index: 2;
+        .voice-inner {
+            width: 64px;
+            height: 64px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 1.5rem;
             transition: transform 0.2s;
         }
-        
-        .mic-btn-main.recording {
-            transform: scale(0.9);
-            box-shadow: 0 0 30px rgba(212, 163, 115, 0.6);
+
+        .voice-trigger.active .voice-inner {
+            transform: scale(0.85);
+            background: #FF3B30; /* 录音时的警示色 */
         }
 
-        .ripple-effect {
+        /* 波动光圈 */
+        .pulse {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            inset: -10px;
+            border: 1px solid #FFFFFF;
             border-radius: 50%;
-            background: var(--moyu-accent);
             opacity: 0;
-            z-index: 1;
         }
-        
-        .mic-btn-main.recording ~ .ripple-effect {
-            animation: micRipple 1.5s infinite ease-out;
+        .active .pulse {
+            animation: pulse-ani 1.5s infinite;
         }
 
-        @keyframes micRipple {
-            0% { transform: scale(1); opacity: 0.5; }
-            100% { transform: scale(1.8); opacity: 0; }
+        @keyframes pulse-ani {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
+
+        /* 动画过渡 */
+        .slide-out { transform: translateX(-20px); opacity: 0; }
+        .slide-in { transform: translateX(20px); opacity: 0; }
+
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="brand-logo">陌语</div>
-    <div class="room-info">3 人局 · 深度模式</div>
+    <div class="brand-logo">SPEAK</div>
+    <div class="subtitle">LISTEN & BE HEARD</div>
 </div>
 
-<div class="card-container">
-    <div class="moyu-card" id="mainCard">
-        <div class="card-number" id="cardNum">CARD 00</div>
-        <div class="c-text" id="questionText">夜深了。<br><br>点击下方切牌，抽取第一张命运卡。</div>
+<div class="stage">
+    <div class="speak-card" id="mainCard">
+        <div class="status-tag">DEEP TALK</div>
+        <div class="c-text" id="questionText">准备好了吗？<br><br>点击左侧按钮切牌。</div>
     </div>
 </div>
 
-<div class="controls">
-    <div class="action-btn" onclick="nextCard()">
-        <div class="action-icon">🃏</div>
-        <div class="action-label">切牌</div>
+<div class="dock">
+    <div class="btn-icon" onclick="drawCard()">
+        <span>切牌</span>
     </div>
 
-    <div class="action-btn mic-wrapper" onmousedown="startVoice()" onmouseup="stopVoice()" ontouchstart="startVoice()" ontouchend="stopVoice()">
-        <div class="mic-btn-main" id="micBtn">🎙️</div>
-        <div class="ripple-effect"></div>
+    <div class="voice-trigger" id="voiceBtn" onmousedown="micOn()" onmouseup="micOff()" ontouchstart="micOn()" ontouchend="micOff()">
+        <div class="voice-inner">🎙️</div>
+        <div class="pulse"></div>
     </div>
 
-    <div class="action-btn" onclick="showParticipants()">
-        <div class="action-icon">👥</div>
-        <div class="action-label">同坐</div>
+    <div class="btn-icon">
+        <span>3/3</span>
     </div>
 </div>
 
 <script>
-    // 注入最终敲定的 34 道硬核题库
     const questions = [
         "你上一次哭，是因为什么？",
         "你觉得这辈子最对不起的人是谁？为什么？",
@@ -232,10 +202,10 @@
         "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
         "你上一次对最亲近的人撒的谎是什么？",
         "哪一个瞬间，你突然觉得这份工作/这个行业真的把你“榨干”了？",
-        "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？为什么？",
+        "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？",
         "你人生中，哪一天是你打死都不想再经历第二次的？",
         "如果明天公司突然倒闭了，你心里的第一反应是恐慌，还是长舒一口气？",
-        "如果现在给你一个机会，把工资减半，但每天能准时 5 点下班且绝对没人找你，你会立刻答应，还是犹豫？",
+        "如果现在给你一个机会，把工资减半，但每天能准时 5 点下班且绝对没人找你，你会立刻答应吗？",
         "假如现在有个按钮，按下去能彻底清空你关于某一个人的所有记忆，你会按吗？",
         "如果今天能用你的一年寿命，换取一件你曾经极其渴望但没得到的东西，你会换什么？",
         "如果给你一千万，条件是立刻和父母和爱人孩子彻底绝交，你换吗？",
@@ -251,68 +221,43 @@
         "如果人的寿命可以像微信转账一样转给别人，你会把你的一年寿命转给谁？",
         "如果有一个快进按键，能直接跳过你现在正在熬的这段日子，代价是减寿三年，你会按吗？",
         "假设你能以上帝视角参加自己的葬礼，你觉得谁会在角落里哭得最伤心？",
-        "如果现在给你一个“合法报复一次”的额度，且绝对不用承担任何后果，你会立刻用在谁身上？",
-        "假设你明天必须彻底离开现在的城市，永远不再回来，走之前你只想最后去见一个人，你会见谁？",
-        "如果你死后，你的手机数据会被毫无保留地公开展示，你最怕被谁看到里面的哪一部分？",
+        "如果现在给你一个“合法报复一次”额度，且不承担后果，你会立刻用在谁身上？",
+        "假设你明天必须彻底离开，永远不再回来，走之前你只想最后去见一个人，你会见谁？",
+        "如果你死后，你的手机数据会被公开展示，你最怕被谁看到里面的哪一部分？",
         "如果可以用一句话总结你上一段失败的感情，你会说什么？",
         "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
-    let usedIndices = [];
-
-    function nextCard() {
+    function drawCard() {
         const card = document.getElementById('mainCard');
         const textEl = document.getElementById('questionText');
-        const numEl = document.getElementById('cardNum');
-
-        // 执行离场动画
-        card.classList.add('card-out');
-
+        
+        card.classList.add('slide-out');
+        
         setTimeout(() => {
-            // 重置题库循环
-            if (usedIndices.length === questions.length) usedIndices = [];
-            
-            let rand;
-            do {
-                rand = Math.floor(Math.random() * questions.length);
-            } while (usedIndices.includes(rand));
-            usedIndices.push(rand);
-
-            // 更新内容
+            const rand = Math.floor(Math.random() * questions.length);
             textEl.innerText = questions[rand];
-            numEl.innerText = "CARD " + String(rand + 1).padStart(2, '0');
-
-            // 移除离场动画，瞬间置于下方准备入场
-            card.classList.remove('card-out');
-            card.classList.add('card-in');
-
-            // 触发回流以重新开始动画
-            void card.offsetWidth;
-
-            // 执行入场动画
-            card.classList.remove('card-in');
             
-            // 如果是在支持振动的移动端，提供轻微的触觉反馈
-            if(navigator.vibrate) navigator.vibrate(20);
+            card.classList.remove('slide-out');
+            card.classList.add('slide-in');
             
-        }, 300); // 配合 CSS transition 时间
+            void card.offsetWidth; 
+            card.classList.remove('slide-in');
+            
+            if(navigator.vibrate) navigator.vibrate(15);
+        }, 300);
     }
 
-    // 语音按键交互逻辑
-    function startVoice(e) {
-        if(e) e.preventDefault(); // 防止移动端触发默认事件
-        document.getElementById('micBtn').classList.add('recording');
-        if(navigator.vibrate) navigator.vibrate([15, 30, 15]); // 录音开始时的震动反馈
-    }
-
-    function stopVoice(e) {
+    function micOn(e) {
         if(e) e.preventDefault();
-        document.getElementById('micBtn').classList.remove('recording');
+        document.getElementById('voiceBtn').classList.add('active');
+        // 此处对接实时语音推流 SDK
     }
 
-    function showParticipants() {
-        // 占位函数：这里可以弹出一个半透明的 Bottom Sheet 显示房间里的其他陌生人
-        alert("同坐的陌生人列表将在这里展示...");
+    function micOff(e) {
+        if(e) e.preventDefault();
+        document.getElementById('voiceBtn').classList.remove('active');
+        // 此处对接实时语音停止推流接口
     }
 </script>
 </body>
