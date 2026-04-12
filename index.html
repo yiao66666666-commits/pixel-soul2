@@ -3,46 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V48.0</title>
+    <title>SPEAK V48.1</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-        /* 背景动画 */
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.5; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
-        /* 登录 */
         #login-screen { position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 4px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; }
+        .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 3px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; }
 
-        /* 游戏流程提示条 (新增) */
-        #process-guide { height: 28px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; border-bottom: 1px solid #333; }
-
-        /* 布局 */
         #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; }
+        #process-guide { height: 28px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; border-bottom: 1px solid #333; }
         .header-bar { height: 110px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
         #player-area { display: flex; gap: 12px; overflow-x: auto; flex: 1; align-items: center; }
         #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #333; }
         
-        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 55px; opacity: 0.5; transition: 0.4s; }
-        .p-item.online { opacity: 1; }
         .p-avatar { width: 44px; height: 44px; border: 4px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border-radius: 12px; }
-        .active-turn .p-avatar { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); transform: scale(1.1); animation: breathe 1s infinite alternate; }
+        .active-turn .p-avatar { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); animation: breathe 1s infinite alternate; }
         @keyframes breathe { from { opacity: 0.8; } to { opacity: 1; } }
         .is-companion { border-color: var(--purple) !important; }
 
-        /* 13:16 圆角档案卡 (修正高度塌陷) */
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
         #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
         #focus-board { 
             position: absolute; height: 65vh; width: calc(65vh * 0.81); 
             background: #fff; color: #111; border: 6px solid #000; border-radius: 24px;
             padding: 30px 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
-            z-index: 5001; box-shadow: 20px 20px 0 rgba(0,0,0,0.5);
-            transform: translateY(100%) rotateX(-180deg); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); opacity: 0;
+            z-index: 5001; transform: translateY(100%) rotateX(-180deg); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); opacity: 0;
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
@@ -51,13 +42,11 @@
         .btn-panel { height: 90px; display: flex; padding: 10px; gap: 10px; align-items: center; justify-content: center; }
         .ctrl-btn { width: 80px; height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.8rem; border-radius: 8px; }
         .ctrl-btn:disabled { opacity: 0.1; }
-        
         .mic-btn { border-radius: 50%; width: 66px; height: 66px; font-size: 1.6rem; color: #fff; border: 4px solid var(--blue); background: #000; }
         .mic-btn.active { background: var(--pink); border-color: #fff; }
 
-        #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 16px 45px; border-radius: 50px; font-weight: 900; border: 5px solid #fff; box-shadow: 0 0 30px var(--gold); }
-        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
-        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
+        /* 房主开始按钮：强制最高层级 */
+        #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 18px 45px; border-radius: 50px; font-weight: 900; border: 5px solid #fff; box-shadow: 0 0 30px var(--gold); cursor: pointer; }
         .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.8); }
     </style>
 </head>
@@ -80,7 +69,7 @@
 <div id="audio-overlay" class="overlay"><button class="ctrl-btn" style="background:var(--gold); color:#000; width:220px;" onclick="unlockAudio()">同步灵魂频段</button></div>
 
 <div id="main-game">
-    <div id="status-bar" style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
+    <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
         <span>ROOM:</span><span id="room-id-val" style="margin-left:10px; background:#000; color:var(--gold); padding:2px 8px;">---</span>
     </div>
     <div id="process-guide">等待陪伴师建立连接...</div>
@@ -93,7 +82,7 @@
         <div id="focus-board">
             <div style="font-size:0.6rem; color:#999; letter-spacing:2px;">[ SENSITIVE FILE ]</div>
             <div id="q-text" style="font-size:1.3rem; font-weight:bold; text-align:center; padding:15px;">档案读取中...</div>
-            <button class="pixel-btn" style="background:#000; color:var(--gold); border:2px solid var(--gold); padding:10px 20px; font-weight:900;" onclick="userCmd('CLOSE')">回答完毕</button>
+            <button class="ctrl-btn" style="background:#000; color:var(--gold); border:2px solid var(--gold); width:160px;" onclick="userCmd('CLOSE')">回答完毕</button>
         </div>
         <div id="deck" style="display:none; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
     </div>
@@ -112,8 +101,8 @@
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    const qs = ["你觉得最对不起谁？", "描述一个最恨自己的瞬间。", "如果你有一件隐身衣...", "明天消失你最想坦白什么？"];
-    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], curSpeaker=null, turnIdx=0, isLocked=false, handledIds=new Set();
+    const qs = ["你最对不起谁？", "描述一个最恨自己的瞬间。", "如果你有一件隐身衣...", "明天消失你最想坦白什么？"];
+    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
 
     function restore(t) { 
         if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || "";
@@ -121,16 +110,25 @@
     }
 
     function entry(m) {
-        myNick = document.getElementById('nick-in').value; myRoom = document.getElementById('room-in').value;
-        if(!myNick || !myRoom) return alert("代号和房号必填");
-        isComp = (m==='companion'); localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
+        myNick = document.getElementById('nick-in').value; 
+        myRoom = document.getElementById('room-in').value;
+        if(!myNick || !myRoom) return alert("必填");
+        isComp = (m==='companion'); 
+        localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
+        
         document.getElementById('login-screen').style.display='none';
         document.getElementById('main-game').style.display='flex';
+        // 关键修复1：房主按钮强制显示逻辑，不依赖异步
+        if(isComp) document.getElementById('host-start-btn').style.display='block';
+        
         document.getElementById('audio-overlay').style.display='flex';
     }
 
     async function unlockAudio() {
-        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) {}
+        try { 
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+            localStream.getAudioTracks()[0].enabled = false; 
+        } catch(e) { console.log("Voice Init failed"); }
         document.getElementById('audio-overlay').style.display='none';
         initNetwork();
     }
@@ -140,23 +138,22 @@
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
-                players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
-                document.getElementById('host-start-btn').style.display='block';
+                players = [{nick:myNick, isComp:true, peerId: id}]; 
+                renderUI();
                 document.getElementById('process-guide').innerText = "等待玩家入场...";
-                // 房主心跳广播：每2秒强行对齐一次全员状态
-                setInterval(() => {
-                    sendAll({type:'HEARTBEAT', list:players, turnIdx, isLocked, curSpeaker});
-                }, 2000);
+                // 房主心跳同步
+                setInterval(() => { sendAll({type:'SYNC', list:players, turnIdx, isLocked}); }, 2000);
             } else {
-                const c = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); setupConn(c);
+                const c = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                setupConn(c);
             }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); });
+        
+        // 关键修复2：语音双向监听增强
         peer.on('call', (call) => {
             call.answer(localStream);
-            call.on('stream', (s) => {
-                const a=document.createElement('audio'); a.srcObject=s; a.autoplay=true; document.getElementById('audio-bridge').appendChild(a);
-            });
+            call.on('stream', (s) => playStream(s, call.peer));
         });
     }
 
@@ -164,26 +161,45 @@
         c.on('open', () => c.send({type:'JOIN', nick:myNick, peerId: peer.id}));
         c.on('data', (d) => {
             if(d.type==='JOIN' && isComp) {
-                if(!players.find(p=>p.peerId===d.peerId)) players.push({nick:d.nick, isComp:false, peerId: d.peerId});
-                sendAll({type:'SYNC', list:players, allIds: players.map(p=>p.peerId), turnIdx});
-                renderUI();
+                if(!players.find(p=>p.peerId===d.peerId)) {
+                    players.push({nick:d.nick, isComp:false, peerId: d.peerId});
+                    sendAll({type:'SYNC', list:players, allIds: players.map(p=>p.peerId), turnIdx});
+                    renderUI();
+                }
             }
-            if(d.type==='HEARTBEAT' || d.type==='SYNC') { 
-                players=d.list; turnIdx=d.turnIdx; isLocked=d.isLocked; curSpeaker=d.curSpeaker;
-                renderUI(); 
-                updateGuide();
-                if(d.allIds) d.allIds.forEach(id => {
-                    if(id !== peer.id && !handledIds.has(id)) { peer.call(id, localStream); handledIds.add(id); }
-                });
+            if(d.type==='SYNC') { 
+                players=d.list; turnIdx=d.turnIdx; isLocked=d.isLocked;
+                renderUI(); updateGuide();
+                // 关键修复3：网状语音循环拨号，确保每个人都接通
+                if(d.allIds) {
+                    d.allIds.forEach(id => {
+                        if(id !== peer.id && !handledIds.has(id)) {
+                            const call = peer.call(id, localStream);
+                            if(call) {
+                                call.on('stream', (s) => playStream(s, id));
+                                handledIds.add(id);
+                            }
+                        }
+                    });
+                }
             }
-            if(d.type==='UNLOCK') { 
-                isLocked=true; document.getElementById('deck').style.display='flex'; renderDeck(); 
-                updateGuide();
-            }
-            if(d.type==='DRAW') { curSpeaker = d.nick; showArchive(d.idx, d.nick); }
-            if(d.type==='CLOSE') { hideArchive(); if(isComp) { turnIdx=(turnIdx+1)%players.filter(p=>!p.isComp).length; curSpeaker=null; } }
-            if(d.type==='CHAT') { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); }
+            if(d.type==='UNLOCK') { isLocked=true; document.getElementById('deck').style.display='flex'; renderDeck(); }
+            if(d.type==='DRAW') { showArchive(d.idx, d.nick); }
+            if(d.type==='CLOSE') { hideArchive(); if(isComp) { turnIdx=(turnIdx+1)%players.filter(p=>!p.isComp).length; } }
+            if(d.type==='CHAT') appendChat(d.nick, d.msg);
         });
+    }
+
+    function playStream(s, id) {
+        let el = document.getElementById(`audio-${id}`);
+        if(!el) {
+            el = document.createElement('audio');
+            el.id = `audio-${id}`;
+            document.getElementById('audio-bridge').appendChild(el);
+        }
+        el.srcObject = s;
+        el.autoplay = true;
+        el.play().catch(e => console.log("Autoplay blocked"));
     }
 
     function sendAll(d) { conns.forEach(c=>c.send(d)); if(!isComp && peer) peer.connect(`SPEAK-${myRoom}`).send(d); }
@@ -191,19 +207,17 @@
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
-        if(!isLocked) { guide.innerText = "等待陪伴师开启审判..."; return; }
-        const userPlayers = players.filter(p=>!p.isComp);
-        const target = userPlayers[turnIdx]?.nick;
-        if(curSpeaker) { guide.innerText = `[ ${curSpeaker} ] 正在坦白，全员评价中...`; }
-        else { guide.innerText = `轮到 [ ${target} ] 开启档案...`; }
+        if(!isLocked) { guide.innerText = "陪伴师正在审阅入场者..."; return; }
+        const users = players.filter(p=>!p.isComp);
+        guide.innerText = `当前由 [ ${users[turnIdx]?.nick} ] 开启档案...`;
     }
 
     function renderUI() {
         const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area');
         pA.innerHTML = ""; cA.innerHTML = "";
-        const userPlayers = players.filter(p=>!p.isComp);
+        const users = players.filter(p=>!p.isComp);
         players.forEach(p => {
-            const isTurn = (!p.isComp && userPlayers[turnIdx]?.nick === p.nick);
+            const isTurn = (!p.isComp && users[turnIdx]?.nick === p.nick);
             const h = `<div class="p-item online ${isTurn?'active-turn':''}">
                 <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div>
                 <div style="font-size:0.55rem;margin-top:5px;color:#aaa;">${p.nick}</div>
@@ -218,34 +232,22 @@
     }
 
     function handleDraw(i) {
-        const userPlayers = players.filter(p=>!p.isComp);
-        if(isComp || userPlayers[turnIdx]?.nick !== myNick) return;
-        curSpeaker = myNick; sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick);
+        const users = players.filter(p=>!p.isComp);
+        if(isComp || users[turnIdx]?.nick !== myNick) return;
+        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick);
     }
 
     function showArchive(idx, nick) {
         document.getElementById('q-text').innerText = qs[idx % qs.length];
         document.getElementById('card-podium').style.display='block';
         const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
-        const isMe = (myNick === nick);
-        document.getElementById('btn-like').disabled = isMe;
-        document.getElementById('btn-dis').disabled = isMe;
-        document.getElementById('btn-trans').disabled = !isMe;
-        updateGuide();
+        document.getElementById('btn-like').disabled = (myNick === nick);
+        document.getElementById('btn-dis').disabled = (myNick === nick);
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
     function hideArchive() { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); }
-    
-    function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
-    function triggerAnim(e) {
-        for(let i=0; i<10; i++) {
-            const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='40%';
-            p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px');
-            document.body.appendChild(p); setTimeout(()=>p.remove(), 800);
-        }
-    }
-
+    function actionReact(e) { appendChat(myNick, e); sendAll({type:'CHAT', nick:myNick, msg:e}); }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     function toggleMic() { if(!localStream) return; const a = localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('mic-btn').classList.toggle('active', a); }
 </script>
