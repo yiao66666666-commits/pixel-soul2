@@ -3,86 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK - AI 仿真内测</title>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <title>SPEAK - 沉浸引导版</title>
     <style>
-        :root { --bg: #13061c; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; --dark: #0a0310; }
+        :root { --bg: #0a0510; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --green: #00ff66; --purple: #a333ff; --dark: #000; }
         * { image-rendering: pixelated; box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03)); background-size: 100% 4px, 4px 100%; }
-        #companion-notice { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 15000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .comp-override-box { border: 4px solid var(--purple); padding: 20px 40px; background: rgba(163, 51, 255, 0.1); color: var(--purple); font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 10px var(--purple); box-shadow: inset 0 0 20px rgba(163, 51, 255, 0.5), 0 0 30px rgba(163, 51, 255, 0.3); animation: glitch-anim 0.2s infinite; }
-        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 100% { transform: translate(0) } }
-        .player-bar { height: 90px; padding: 12px 10px; display: flex; gap: 15px; overflow-x: auto; background: var(--dark); z-index: 1001; border-bottom: 2px solid #222; }
-        .p-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 6px; width: 55px; }
-        .p-avatar { width: 46px; height: 46px; border: 3px solid #333; border-radius: 12px; position: relative; display: flex; align-items: center; justify-content: center; background: #000; transition: 0.2s; }
-        .p-avatar.active { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: translateY(-2px); }
-        .p-avatar.bot { border-style: dashed; border-color: #555; }
-        .p-item .name { font-size: 0.55rem; color: #aaa; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .main-deck { flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; overflow-y: auto; }
-        .card { aspect-ratio: 2/3; background: #3d1563; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; background-image: repeating-conic-gradient(#4d1b7b 0 25%, #3d1563 0 50%); background-size: 8px 8px; }
-        .card.flipped { opacity: 0.1; pointer-events: none; }
-        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
-        .focused-card { width: 85%; max-width: 320px; min-height: 300px; background: #eee; color: #111; border-radius: 16px; border: 6px solid #111; padding: 25px 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; box-shadow: 12px 12px 0px rgba(0,0,0,0.9); }
-        .footer-console { height: 180px; background: var(--dark); border-top: 3px solid var(--pink); display: flex; flex-direction: column; }
-        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); }
-        .btn-grid { height: 70px; border-top: 2px solid var(--blue); display: flex; padding: 8px 10px; gap: 10px; background: #000; }
-        .p-btn { background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 8px; flex: 1; font-family: inherit; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
-        .p-btn:disabled { opacity: 0.3; }
-        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 40000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        
+        /* 顶部向导栏 - 解决不知道干啥的问题 */
+        #guide-bar { height: 40px; background: var(--pink); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; z-index: 2000; }
+
+        /* 玩家栏：发言态高亮 */
+        .player-bar { height: 90px; padding: 10px; display: flex; gap: 15px; background: var(--dark); border-bottom: 2px solid #222; }
+        .p-item { display: flex; flex-direction: column; align-items: center; width: 60px; transition: 0.3s; }
+        .p-avatar { width: 46px; height: 46px; border: 2px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #111; position: relative; }
+        .p-item.is-speaking { transform: scale(1.15); }
+        .p-item.is-speaking .p-avatar { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
+        .p-item.is-speaking::after { content: "SPEAKING"; font-size: 0.5rem; color: var(--gold); margin-top: 2px; }
+        .name { font-size: 0.55rem; color: #888; margin-top: 4px; }
+
+        /* 卡牌区 */
+        .main-deck { flex: 1; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 10px; overflow-y: auto; }
+        .card { aspect-ratio: 2/3; background: #2a104a; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; }
+        .card.flipped { opacity: 0.05; pointer-events: none; }
+
+        /* 聚焦展示卡 */
+        #focused-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+        .focused-card { width: 85%; max-width: 320px; background: #f0f0f0; color: #111; border-radius: 12px; border: 5px solid #000; padding: 20px; text-align: center; }
+        #q-text { font-size: 1.1rem; font-weight: bold; margin: 25px 0; line-height: 1.5; }
+
+        /* 底部控制台：露出聊天 */
+        .footer-console { height: 200px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
+        #c-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.7rem; color: var(--blue); background: rgba(0,0,0,0.3); }
+        .btn-grid { height: 70px; display: flex; padding: 8px; gap: 8px; }
+        .p-btn { flex: 1; background: #111; color: var(--blue); border: 2px solid var(--blue); border-radius: 4px; font-family: inherit; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
+        .p-btn:disabled { opacity: 0.2; }
+        .p-btn.gold { border-color: var(--gold); color: var(--gold); }
+        .p-btn.pink { border-color: var(--pink); color: var(--pink); }
+        
+        #setup { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div id="companion-notice"><div class="comp-override-box">[ AI 影子介入中 ]</div></div>
+<div id="guide-bar">>>> 载入中...</div>
 
 <div id="setup">
-    <h1 style="color:var(--pink); font-size: 2.5rem; margin-bottom: 20px;">SPEAK AI</h1>
-    <button class="p-btn pink" style="max-width:200px; height:50px; flex:none;" onclick="startAiDemo()">开启 5 人 AI 陪玩</button>
+    <button class="p-btn gold" style="max-width:200px; height:50px;" onclick="startDemo()">开启 AI 仿真测试</button>
 </div>
 
 <div class="player-bar" id="p-bar"></div>
+
 <div class="main-deck" id="deck"></div>
 
 <div id="focused-overlay">
     <div class="focused-card">
-        <div style="color:var(--pink); font-size: 0.7rem;">[ ARCHIVE OPEN ]</div>
-        <div id="q-text" style="font-size: 1.1rem; font-weight: bold; margin: 20px 0;"></div>
-        <div id="vote-display" style="font-size: 1.5rem; height: 35px;"></div>
-        <button id="f-btn" class="p-btn" style="width:100%; border-color:var(--gold); color:var(--gold);" onclick="nextTurn()">确认并继续</button>
+        <div style="color:var(--pink); font-size: 0.6rem; font-weight: 900;">[ SPEAKING NOW ]</div>
+        <div id="q-text">问题加载中...</div>
+        <div id="vote-area" style="font-size: 1.2rem; margin-bottom: 15px;"></div>
+        <div style="display: flex; gap: 10px; width: 100%;">
+            <button id="transfer-btn" class="p-btn pink" onclick="transferCard()">转移卡</button>
+            <button id="close-btn" class="p-btn gold" onclick="nextTurn()">完成发言</button>
+        </div>
     </div>
 </div>
 
 <div class="footer-console">
     <div id="c-msgs"></div>
     <div class="btn-grid">
-        <button class="p-btn" onclick="vote('H')">👍 诚实</button>
-        <button class="p-btn" style="border-color:var(--pink); color:var(--pink);" onclick="vote('L')">👎 撒谎</button>
+        <button id="like-btn" class="p-btn" onclick="vote('👍')">点赞</button>
+        <button id="disagree-btn" class="p-btn" style="border-color:#555; color:#555;" onclick="vote('❌')">不同意</button>
     </div>
 </div>
 
 <script>
-    const questions = ["你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？", "如果工资减半但能准时下班，你换吗？", "给在座一位玩家提个缺点。", "如果你死后手机被公开，你最怕谁看到？", "哪一首歌旋律一响，你会想起一个人？"];
-    const botNames = ["冷漠的K", "碎碎念的小鱼", "杠精阿强", "深夜哲学家", "透明人"];
-    const botReplies = ["这题扎心了...", "我选诚实。", "感觉有人在撒谎哦。", "这就是人生吧。", "继续下一题吧。"];
-
+    const questions = [
+        "你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？", "童年里哪一件小事负面影响你到现在？", 
+        "此时此刻最大的焦虑源头是什么？", "如果生命只剩24小时，你会去见谁？", "谁曾对你特别好但后来断了联系？",
+        "你最想收到谁的一句“对不起”？", "摘下面具你有多累？(1-10分)", "对最亲近的人撒的谎是什么？",
+        "哪个瞬间觉得这份工作把你榨干了？", "谁的微信消息会让你生理性不适？", "哪一天打死不想经历第二次？",
+        "如果明天公司倒闭，你是恐慌还是解脱？", "工资减半换准时下班，你换吗？", "清空某人的记忆按钮，你会按吗？"
+    ];
+    const bots = ["阿强", "小美", "老王", "Emma", "大刘"];
     let players = [], turnIdx = 0, flipped = [], votes = [];
 
-    function startAiDemo() {
+    function startDemo() {
         document.getElementById('setup').style.display = 'none';
-        players = [{id: 'me', nick: '我', avatar: '🃏', isBot: false}];
-        for(let i=0; i<5; i++) {
-            players.push({id: 'bot'+i, nick: botNames[i], avatar: '🤖', isBot: true});
-        }
+        players = [{nick: '我', isBot: false, avatar: '🃏'}];
+        bots.forEach(n => players.push({nick: n, isBot: true, avatar: '🤖'}));
         renderPlayers();
         renderDeck();
-        appendChat("系统", "5位影子玩家已加入，轮流抽牌开启。");
-        checkBotTurn();
+        setGuide("请点击卡片，抽取你的命运问题");
+        checkTurn();
     }
+
+    function setGuide(txt) { document.getElementById('guide-bar').innerText = `>>> ${txt}`; }
 
     function renderPlayers() {
         document.getElementById('p-bar').innerHTML = players.map((p, i) => `
-            <div class="p-item">
-                <div class="p-avatar ${i===turnIdx?'active':''} ${p.isBot?'bot':''}">${p.avatar}</div>
+            <div class="p-item ${i===turnIdx?'is-speaking':''}">
+                <div class="p-avatar">${p.avatar}</div>
                 <div class="name">${p.nick}</div>
             </div>
         `).join('');
@@ -94,61 +113,74 @@
     }
 
     function userDraw(i) {
-        if(players[turnIdx].isBot) return;
+        if(players[turnIdx].isBot || flipped.includes(i)) return;
         draw(i);
     }
 
     function draw(i) {
-        if(flipped.includes(i)) return;
         flipped.push(i);
         const q = questions[Math.floor(Math.random()*questions.length)];
         document.getElementById('q-text').innerText = q;
         document.getElementById('focused-overlay').style.display = 'flex';
         renderDeck();
+        setGuide(`${players[turnIdx].nick} 正在发言，其他人请倾听并评价`);
+        
+        // 发言者不能点赞
+        const isMeSpeaking = !players[turnIdx].isBot;
+        document.getElementById('like-btn').disabled = isMeSpeaking;
+        document.getElementById('disagree-btn').disabled = isMeSpeaking;
+        document.getElementById('transfer-btn').style.display = isMeSpeaking ? 'block' : 'none';
+
         if(players[turnIdx].isBot) {
-            setTimeout(() => appendChat(players[turnIdx].nick, "关于这题，我的故事是... (此处省略500字)"), 1000);
+            setTimeout(() => appendChat(players[turnIdx].nick, "关于这个，我想说的是..."), 1000);
+            autoBotVotes();
         }
-        botVoting();
     }
 
-    function botVoting() {
-        votes = [];
-        document.getElementById('vote-display').innerHTML = "";
-        players.forEach((p, i) => {
-            if(i !== turnIdx && p.isBot) {
-                setTimeout(() => {
-                    const v = Math.random() > 0.2 ? 'H' : 'L';
-                    votes.push(v);
-                    document.getElementById('vote-display').innerHTML += v === 'H' ? '👍' : '👎';
-                    if(Math.random() > 0.7) appendChat(p.nick, botReplies[Math.floor(Math.random()*botReplies.length)]);
-                }, 500 + Math.random()*2000);
-            }
-        });
+    function transferCard() {
+        let next;
+        do { next = Math.floor(Math.random()*players.length); } while(next === turnIdx);
+        appendChat("系统", `${players[turnIdx].nick} 使用了转移卡，问题移交给 ${players[next].nick}`);
+        turnIdx = next;
+        renderPlayers();
+        draw(flipped[flipped.length-1]);
     }
 
     function vote(type) {
-        if(players[turnIdx].isBot) {
-            votes.push(type);
-            document.getElementById('vote-display').innerHTML += type === 'H' ? '👍' : '👎';
-        }
+        votes.push(type);
+        document.getElementById('vote-area').innerHTML += type;
+        appendChat("我", `发送了 ${type === '👍' ? '点赞' : '不同意'}`);
+    }
+
+    function autoBotVotes() {
+        votes = []; document.getElementById('vote-area').innerHTML = "";
+        players.forEach((p, i) => {
+            if(i !== turnIdx && p.isBot) {
+                setTimeout(() => {
+                    const v = Math.random() > 0.2 ? '👍' : '❌';
+                    votes.push(v);
+                    document.getElementById('vote-area').innerHTML += v;
+                }, 1000 + Math.random()*2000);
+            }
+        });
     }
 
     function nextTurn() {
         document.getElementById('focused-overlay').style.display = 'none';
         turnIdx = (turnIdx + 1) % players.length;
         renderPlayers();
-        checkBotTurn();
+        checkTurn();
     }
 
-    function checkBotTurn() {
+    function checkTurn() {
         if(players[turnIdx].isBot) {
-            appendChat("系统", `轮到 ${players[turnIdx].nick} 抽牌...`);
+            setGuide(`正在等待 ${players[turnIdx].nick} 抽牌...`);
             setTimeout(() => {
                 let idx; do { idx = Math.floor(Math.random()*40); } while(flipped.includes(idx));
                 draw(idx);
             }, 2000);
         } else {
-            appendChat("系统", "请你点击卡片抽牌。");
+            setGuide("轮到你了，请在卡池中抽取一张牌");
         }
     }
 
