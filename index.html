@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.6</title>
+    <title>SPEAK V49.7</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -34,7 +34,6 @@
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
         #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
         
-        /* 玩家档案卡 */
         #focus-board { 
             position: absolute; height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
             background: #fff; color: #111; border: 6px solid #000; border-radius: 24px;
@@ -44,7 +43,6 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
-        /* 陪伴师塔罗卡 (全尺寸无白边 Canvas) */
         #comp-card-board {
             position: absolute; height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
@@ -56,14 +54,12 @@
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
         #spectrum-canvas { width: 100%; height: 100%; object-fit: fill; }
 
-        /* --- 修复：按键全局变形 --- */
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .ctrl-btn:disabled { opacity: 0.15; border-color: #444; }
 
         .footer { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.85rem; color: var(--blue); }
         
-        /* 仅限制底部面板内的按钮尺寸 */
         .btn-panel { height: 90px; display: flex; padding: 10px; gap: 8px; align-items: center; justify-content: center; }
         .btn-panel .ctrl-btn { flex: 1; max-width: 80px; padding: 0; }
         
@@ -155,7 +151,6 @@
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    // 34 道灵魂题库
     const CUSTOM_QS = [
         "你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？为什么？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？",
         "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？", "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
@@ -168,7 +163,6 @@
         "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
-    // 20 张陪伴师塔罗全图属性库
     const COMP_CARDS = [
         {t:"THE SPARK", d:"ACTION - 星火", g:"谁来点燃静默？", c1:"#3a0000", c2:"#ff0055", ic:"🔥"},
         {t:"THE CROWN", d:"VOICE - 冕", g:"请把麦克风交给戴皇冠的人", c1:"#1a0a2a", c2:"#ffcc00", ic:"👑"},
@@ -288,7 +282,9 @@
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     function sendAll(d) { if (isComp) { conns.forEach(c => { if(c.open) c.send(d); }); } else { if (hostConn && hostConn.open) hostConn.send(d); } }
-    function hostGo() { document.getElementById('host-start-btn').style.display='none'; isLocked = true; sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
+    
+    // [修复点1]：房主开启时也调用自身的解锁逻辑，解决盲区问题
+    function hostGo() { document.getElementById('host-start-btn').style.display='none'; triggerUnlock(); sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
@@ -317,11 +313,15 @@
     function renderDeck() {
         if(document.getElementById('deck').innerHTML !== "") return;
         let h=""; 
-        // 渲染 20 张陪伴师塔罗牌 (卡背紫蓝渐变)
-        for(let i=0; i<20; i++) {
-            h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
+        
+        // [修复点2]：塔罗牌只对陪伴师渲染，普通玩家看不见它们
+        if(isComp) {
+            for(let i=0; i<20; i++) {
+                h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
+            }
         }
-        // 渲染 40 张普通档案卡 (卡背黑紫渐变)
+
+        // 普通档案卡对所有人渲染
         for(let i=0; i<40; i++) {
             h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`;
         }
@@ -331,7 +331,9 @@
 
     function updateDeckVisibility() {
         for(let i=0; i<40; i++) { const c = document.getElementById(`card-${i}`); if(c) c.style.visibility = drawnCards.includes(i) ? 'hidden' : 'visible'; }
-        for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; }
+        if(isComp) {
+            for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; }
+        }
     }
 
     function handleDraw(i) {
@@ -345,7 +347,6 @@
         sendAll({type:'DRAW_COMP', idx:i}); showSpectrum(i);
     }
 
-    // --- 全屏图像 Canvas 渲染系统 ---
     function showSpectrum(idx) {
         const board = document.getElementById('comp-card-board');
         drawSpectrumCard(idx);
@@ -374,47 +375,24 @@
 
         const card = COMP_CARDS[idx];
 
-        // 绘制双色过渡背景图像
-        ctx.fillStyle = card.c1;
-        ctx.fillRect(0, 0, 320, 200);
-        ctx.fillStyle = card.c2;
-        ctx.fillRect(0, 200, 320, 200);
+        ctx.fillStyle = card.c1; ctx.fillRect(0, 0, 320, 200);
+        ctx.fillStyle = card.c2; ctx.fillRect(0, 200, 320, 200);
         
-        // 绘制像素风天地交界线
         for(let i=0; i<150; i++) {
             ctx.fillStyle = (Math.random()>0.5) ? card.c1 : card.c2;
             ctx.fillRect(Math.random()*320, 180 + Math.random()*40, 10, 10);
         }
 
-        // 绘制中央巨大主视觉
-        ctx.font = '120px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.font = '120px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(card.ic, 160, 200);
 
-        // 绘制顶部信息遮罩条
-        ctx.fillStyle = 'rgba(0,0,0,0.85)';
-        ctx.fillRect(0, 0, 320, 90);
+        ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, 320, 90); ctx.fillRect(0, 280, 320, 120);
         
-        // 绘制底部信息遮罩条
-        ctx.fillRect(0, 280, 320, 120);
+        ctx.strokeStyle = '#a333ff'; ctx.lineWidth = 6; ctx.strokeRect(3, 3, 314, 394);
 
-        // 绘制紫粉霓虹内边框
-        ctx.strokeStyle = '#a333ff';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(3, 3, 314, 394);
-
-        // 写入卡牌文字
-        ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 24px "Courier New", monospace';
-        ctx.fillText(card.t, 160, 40);
-
-        ctx.fillStyle = '#aaa';
-        ctx.font = '12px "Courier New", monospace';
-        ctx.fillText(card.d, 160, 70);
-
-        ctx.fillStyle = '#00f2ff';
-        ctx.font = 'bold 16px "Courier New", monospace';
+        ctx.fillStyle = '#ffcc00'; ctx.font = 'bold 24px "Courier New", monospace'; ctx.fillText(card.t, 160, 40);
+        ctx.fillStyle = '#aaa'; ctx.font = '12px "Courier New", monospace'; ctx.fillText(card.d, 160, 70);
+        ctx.fillStyle = '#00f2ff'; ctx.font = 'bold 16px "Courier New", monospace';
         wrapText(ctx, card.g, 160, 320, 280, 24);
     }
 
@@ -446,7 +424,6 @@
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
     function hideArchive() { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); }
     function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
-    
     function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; }
     function triggerAnim(e) { for(let i=0; i<10; i++) { const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='40%'; p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); document.body.appendChild(p); setTimeout(()=>p.remove(), 800); } }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
