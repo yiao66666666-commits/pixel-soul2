@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.8</title>
+    <title>SPEAK V49.9</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -43,7 +43,6 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
-        /* 陪伴师塔罗图像板 - 移除 Canvas，改为图片容器 */
         #comp-card-board {
             position: absolute; height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
@@ -53,7 +52,7 @@
             overflow: hidden;
         }
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
-        #spectrum-img { width: 100%; height: 100%; object-fit: cover; } /* 图片自适应铺满 */
+        #spectrum-img { width: 100%; height: 100%; object-fit: cover; } 
 
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .ctrl-btn:disabled { opacity: 0.15; border-color: #444; }
@@ -68,7 +67,7 @@
         .mic-btn.active { background: var(--pink); border-color: #fff; }
 
         #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 18px 45px; border-radius: 50px; font-weight: 900; border: 5px solid #fff; box-shadow: 0 0 30px var(--gold); cursor: pointer; }
-        .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.85); }
+        .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.85); text-align: center; padding: 20px;}
         .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
         @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
     </style>
@@ -165,37 +164,47 @@
     ];
 
     // ==========================================
-    // 🎨 这里是你未来填入 AI 图像链接的地方！
-    // 一共 20 张，按顺序对应 01 到 20。
+    // 🎨 请在此处替换为你生成的 20 张图像链接
     // ==========================================
     const COMP_CARD_URLS = [
-        "https://via.placeholder.com/600x800/220022/ff0055?text=THE+SPARK",  // 01 星火
-        "https://via.placeholder.com/600x800/110022/ffcc00?text=THE+CROWN",  // 02 冕
-        "https://via.placeholder.com/600x800/111111/ff0000?text=THE+TOWER",  // 03 崩塌
-        "https://via.placeholder.com/600x800/001122/00ffff?text=THE+CHARIOT",// 04 战车
-        "https://via.placeholder.com/600x800/001100/00ff00?text=THE+ECHO",   // 05 回声
-        "https://via.placeholder.com/600x800/000022/0066ff?text=THE+TEAR",   // 06 泪
-        "https://via.placeholder.com/600x800/220022/ff00ff?text=THE+MIRROR", // 07 双生镜
-        "https://via.placeholder.com/600x800/331100/ff6600?text=THE+EMBRACE",// 08 拥抱
-        "https://via.placeholder.com/600x800/00001a/000088?text=THE+OCEAN",  // 09 深海
-        "https://via.placeholder.com/600x800/002222/00ffff?text=THE+FOUNTAIN",// 10 源泉
-        "https://via.placeholder.com/600x800/111111/dddddd?text=THE+SWORD",  // 11 真理剑
-        "https://via.placeholder.com/600x800/220000/ff0000?text=THE+THREAD", // 12 命运线
-        "https://via.placeholder.com/600x800/1a1a2e/4a4e69?text=THE+STORM",  // 13 风暴
-        "https://via.placeholder.com/600x800/222222/ffcc00?text=THE+GATE",   // 14 门扉
-        "https://via.placeholder.com/600x800/1a0033/6600cc?text=THE+VORTEX", // 15 回旋
-        "https://via.placeholder.com/600x800/33001a/ff00aa?text=THE+MASK",   // 16 面具
-        "https://via.placeholder.com/600x800/221100/ff8800?text=THE+CLOCK",  // 17 时钟
-        "https://via.placeholder.com/600x800/332200/ffcc00?text=THE+GOLD",   // 18 金块
-        "https://via.placeholder.com/600x800/000000/00ffff?text=THE+VOID",   // 19 虚空
-        "https://via.placeholder.com/600x800/001a00/00ff00?text=THE+WORLD"   // 20 重塑
+        "https://via.placeholder.com/600x800/220022/ff0055?text=THE+SPARK",  
+        "https://via.placeholder.com/600x800/110022/ffcc00?text=THE+CROWN",  
+        "https://via.placeholder.com/600x800/111111/ff0000?text=THE+TOWER",  
+        "https://via.placeholder.com/600x800/001122/00ffff?text=THE+CHARIOT",
+        "https://via.placeholder.com/600x800/001100/00ff00?text=THE+ECHO",   
+        "https://via.placeholder.com/600x800/000022/0066ff?text=THE+TEAR",   
+        "https://via.placeholder.com/600x800/220022/ff00ff?text=THE+MIRROR", 
+        "https://via.placeholder.com/600x800/331100/ff6600?text=THE+EMBRACE",
+        "https://via.placeholder.com/600x800/00001a/000088?text=THE+OCEAN",  
+        "https://via.placeholder.com/600x800/002222/00ffff?text=THE+FOUNTAIN",
+        "https://via.placeholder.com/600x800/111111/dddddd?text=THE+SWORD",  
+        "https://via.placeholder.com/600x800/220000/ff0000?text=THE+THREAD", 
+        "https://via.placeholder.com/600x800/1a1a2e/4a4e69?text=THE+STORM",  
+        "https://via.placeholder.com/600x800/222222/ffcc00?text=THE+GATE",   
+        "https://via.placeholder.com/600x800/1a0033/6600cc?text=THE+VORTEX", 
+        "https://via.placeholder.com/600x800/33001a/ff00aa?text=THE+MASK",   
+        "https://via.placeholder.com/600x800/221100/ff8800?text=THE+CLOCK",  
+        "https://via.placeholder.com/600x800/332200/ffcc00?text=THE+GOLD",   
+        "https://via.placeholder.com/600x800/000000/00ffff?text=THE+VOID",   
+        "https://via.placeholder.com/600x800/001a00/00ff00?text=THE+WORLD"   
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
     let hostConn = null; 
     let drawnCards = [], drawnCompCards = [];
     let compCardIndex = null;
-    let lastSyncTime = Date.now(); // 核心：用于检测断线的看门狗时间戳
+    let lastSyncTime = Date.now();
+
+    // 核心修复：注入 Google STUN 穿透服务器
+    const peerConfig = {
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        }
+    };
 
     function tryCompanion() {
         if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("请先填写昵称和房号");
@@ -226,14 +235,21 @@
         document.getElementById('audio-overlay').style.display='flex';
     }
 
+    // 核心修复：解绑麦克风卡死
     async function unlockAudio() {
-        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) {}
+        try { 
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+            localStream.getAudioTracks()[0].enabled = false; 
+        } catch(e) {
+            alert("⚠️ 麦克风权限获取失败！\n\n请确保：\n1. 使用的是 HTTPS 安全链接\n2. 浏览器未禁止麦克风权限\n\n(将强行以无声模式进入房间)");
+        }
         document.getElementById('audio-overlay').style.display='none';
         initNetwork();
     }
 
     function initNetwork() {
-        peer = new Peer(isComp ? `SPEAK-${myRoom}` : null);
+        peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
+        
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
@@ -245,27 +261,28 @@
                 hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
                 setupConn(hostConn); 
                 
-                // 📡【核心修复：断线静默重连狗】
-                // 如果玩家 4 秒内没收到房主的 SYNC 信号，说明底层数据通道已断，自动重连
+                // 核心修复：放宽至 8 秒的断线容忍度
                 setInterval(() => {
-                    if (Date.now() - lastSyncTime > 4000) {
-                        console.log("检测到连接掉线，正在重新连接房主...");
+                    if (Date.now() - lastSyncTime > 8000) {
+                        console.log("Watchdog: Connection timeout, reconnecting to host...");
                         if(hostConn) hostConn.close();
                         hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}});
                         setupConn(hostConn);
-                        lastSyncTime = Date.now(); // 重置时间，防止频繁狂发
+                        lastSyncTime = Date.now();
                     }
-                }, 2000);
+                }, 3000);
             }
         });
+        
         peer.on('connection', (c) => { conns.push(c); setupConn(c); });
+        
         peer.on('call', (call) => {
             handledIds.add(call.peer);
-            call.answer(localStream);
+            if(localStream) call.answer(localStream); else call.answer();
             call.on('stream', (s) => {
                 let el = document.getElementById(`audio-${call.peer}`);
                 if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); }
-                el.srcObject = s; el.play().catch(e => console.log("iOS交互限制"));
+                el.srcObject = s; el.play().catch(e => console.log("iOS Autoplay blocked"));
             });
         });
     }
@@ -276,7 +293,7 @@
             if(d.type==='JOIN' && isComp) { if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); } }
             
             if(d.type==='SYNC') { 
-                lastSyncTime = Date.now(); // 收到心跳，喂狗
+                lastSyncTime = Date.now();
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
@@ -291,7 +308,8 @@
                 
                 renderUI(); updateGuide();
                 if(isLocked) updateDeckVisibility();
-                if(d.allIds) d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); } });
+                
+                if(d.allIds && localStream) d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); } });
             }
             if(d.type==='UNLOCK') triggerUnlock();
             
@@ -307,20 +325,11 @@
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     
     function sendAll(d) { 
-        if (isComp) { 
-            conns.forEach(c => { if(c.open) c.send(d); }); 
-        } else { 
-            if (hostConn && hostConn.open) hostConn.send(d); 
-        } 
+        if (isComp) { conns.forEach(c => { if(c.open) c.send(d); }); } 
+        else { if (hostConn && hostConn.open) hostConn.send(d); } 
     }
     
-    // 双重保险：不仅通过 SYNC 修改状态，瞬间加发一个 UNLOCK 包，防延迟
-    function hostGo() { 
-        document.getElementById('host-start-btn').style.display='none'; 
-        triggerUnlock(); 
-        sendAll({type:'UNLOCK'}); 
-        sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); 
-    }
+    function hostGo() { document.getElementById('host-start-btn').style.display='none'; triggerUnlock(); sendAll({type:'UNLOCK'}); sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
@@ -351,7 +360,6 @@
         let h=""; 
         
         if(isComp) {
-            // 塔罗牌放桌面上：紫蓝渐变卡背
             for(let i=0; i<20; i++) {
                 h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
             }
@@ -382,7 +390,6 @@
         sendAll({type:'DRAW_COMP', idx:i}); showSpectrum(i);
     }
 
-    // --- 加载专属图像 ---
     function showSpectrum(idx) {
         const board = document.getElementById('comp-card-board');
         document.getElementById('spectrum-img').src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
