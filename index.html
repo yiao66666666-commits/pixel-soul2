@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.16</title>
+    <title>SPEAK V49.17</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -110,8 +110,12 @@
 <div id="main-game">
     <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
         <span>ROOM:</span><span id="room-id-val" style="margin-left:10px; background:#000; color:var(--gold); padding:2px 8px;">---</span>
+        
+        <button id="btn-shuffle" class="ctrl-btn" style="display:none; height:24px; font-size:0.6rem; padding:0 8px; margin-left:auto; background:#111; border-color:var(--purple); color:var(--purple);" onclick="hostCmd('SHUFFLE_COMP')">🔄 洗牌</button>
     </div>
-    <div id="process-guide" style="color:var(--blue);">信号穿透中，请稍候...</div>
+    
+    <div id="process-guide" style="color:var(--blue);">寻找信号源，请耐心等待...</div>
+    
     <div class="header-bar">
         <div id="player-area"></div>
         <div id="companion-area"></div>
@@ -177,6 +181,7 @@
     let hostConn = null; 
     let drawnCards = [], drawnCompCards = [];
     let compCardIndex = null;
+    let syncTimeout = null;
 
     const peerConfig = {
         config: {
@@ -213,7 +218,11 @@
         localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
         document.getElementById('login-screen').style.display='none';
         document.getElementById('main-game').style.display='flex';
-        if(isComp) document.getElementById('host-start-btn').style.display='block';
+        
+        if(isComp) {
+            document.getElementById('host-start-btn').style.display='block';
+            document.getElementById('btn-shuffle').style.display='block';
+        }
         document.getElementById('audio-overlay').style.display='flex';
     }
 
@@ -228,6 +237,19 @@
         initNetwork();
     }
 
+    // 核心修复：精准状态下发，不再每秒狂轰滥炸
+    function broadcastState() {
+        if (!isComp) return;
+        const state = {
+            type: 'SYNC',
+            list: players, turnIdx: turnIdx, isLocked: isLocked, 
+            cardIndex: cardIndex, compCardIndex: compCardIndex, 
+            drawnCards: drawnCards, drawnCompCards: drawnCompCards, 
+            allIds: players.map(p=>p.peerId)
+        };
+        sendAll(state);
+    }
+
     function initNetwork() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
         
@@ -238,28 +260,17 @@
             }
         });
 
-        // 核心：使用原生温和重连，不引发服务器封锁
-        peer.on('disconnected', () => {
-            console.log("信令服务器断开，自动重连...");
-            if(document.getElementById('process-guide')) {
-                document.getElementById('process-guide').innerText = "信号重连中...";
-                document.getElementById('process-guide').style.color = "var(--pink)";
-            }
-            peer.reconnect();
-        });
-
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
                 document.getElementById('process-guide').innerText = "等待玩家入场...";
                 document.getElementById('process-guide').style.color = "var(--gold)";
-                players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
-                setInterval(() => { 
-                    sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); 
-                }, 1000);
+                players = [{nick:myNick, isComp:true, peerId: id}]; 
+                renderUI();
+                broadcastState(); // 初始化广播一次
             } else { 
-                // 去除 reliable: true，防止数据流卡死
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                // 核心修复：重新开启 reliable，确保大同步包不丢失
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
                 setupConn(hostConn); 
             }
         });
@@ -271,6 +282,7 @@
                 if(isComp) {
                     players = players.filter(p => p.peerId !== c.peer);
                     renderUI();
+                    broadcastState(); // 有人退出，立刻广播新状态
                 }
             });
         });
@@ -288,9 +300,12 @@
 
     function setupConn(c) {
         c.on('open', () => {
-            document.getElementById('process-guide').innerText = "连接已建立，同步中...";
-            document.getElementById('process-guide').style.color = "var(--blue)";
-            c.send({type:'JOIN', nick:myNick, peerId: peer.id});
+            if(!isComp) {
+                document.getElementById('process-guide').innerText = "连接成功，读取数据中...";
+                document.getElementById('process-guide').style.color = "var(--blue)";
+                // 发送加入请求，等待房主回应
+                c.send({type:'JOIN', nick:myNick, peerId: peer.id});
+            }
         });
         
         c.on('data', (d) => {
@@ -298,11 +313,14 @@
                 if(!players.find(p=>p.peerId===d.peerId)) { 
                     players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
                     renderUI(); 
+                    broadcastState(); // 有新玩家加入，立刻全服广播
                 } 
             }
             
             if(d.type==='SYNC') { 
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
+                
+                // 核心修复：即使没点开始，新玩家也能顺利解开遮罩看到 UI
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
                 const users = players.filter(p=>!p.isComp);
@@ -319,24 +337,26 @@
                 
                 if(d.allIds && localStream) d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); } });
             }
+            
             if(d.type==='UNLOCK') triggerUnlock();
             
-            // 房主统一仲裁卡牌状态，杜绝闪退和不可见
             if(d.type==='DRAW') { 
                 cardIndex = d.idx; 
                 if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); 
                 updateDeckVisibility(); 
                 showArchive(d.idx, d.nick); 
-                if(isComp) sendAll(d); 
+                if(isComp) broadcastState(); 
             }
+            
             if(d.type==='CLOSE') { 
                 hideArchive(); cardIndex = null; 
                 if(isComp) { 
                     const users = players.filter(p=>!p.isComp); 
                     if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; 
-                    sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); 
+                    broadcastState(); 
                 } 
             }
+            
             if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); } if(isComp) sendAll(d); }
             
             if(d.type==='DRAW_COMP') { 
@@ -344,18 +364,28 @@
                 if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); 
                 updateDeckVisibility(); 
                 showSpectrum(d.idx); 
-                if(isComp) sendAll(d); 
+                if(isComp) broadcastState(); 
             }
-            if(d.type==='CLOSE_COMP') { hideSpectrum(); compCardIndex = null; if(isComp) sendAll(d); }
+            
+            if(d.type==='CLOSE_COMP') { 
+                hideSpectrum(); compCardIndex = null; 
+                if(isComp) broadcastState(); 
+            }
+
+            // 新增：塔罗牌洗牌同步
+            if(d.type==='SHUFFLE_COMP') {
+                drawnCompCards = [];
+                updateDeckVisibility();
+                if(isComp) broadcastState();
+            }
         });
         
         c.on('close', () => {
             if(!isComp) {
                 document.getElementById('process-guide').innerText = "与房主断开，尝试重连...";
                 document.getElementById('process-guide').style.color = "var(--pink)";
-                // 温和的重连尝试，不无限狂发
                 setTimeout(() => {
-                    hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                    hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
                     setupConn(hostConn);
                 }, 2000);
             }
@@ -373,7 +403,31 @@
         } 
     }
     
-    function hostGo() { document.getElementById('host-start-btn').style.display='none'; triggerUnlock(); sendAll({type:'UNLOCK'}); sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
+    function hostGo() { 
+        document.getElementById('host-start-btn').style.display='none'; 
+        isLocked = true;
+        triggerUnlock(); 
+        sendAll({type:'UNLOCK'}); 
+        broadcastState(); 
+    }
+
+    // 新增：陪伴师专属洗牌命令
+    function hostCmd(t) {
+        if(!isComp) return;
+        if(t==='CLOSE_COMP') { 
+            compCardIndex = null;
+            hideSpectrum(); 
+            broadcastState(); 
+        }
+        if(t==='SHUFFLE_COMP') {
+            if(confirm("确定要将所有塔罗牌洗回牌库吗？")) {
+                drawnCompCards = [];
+                updateDeckVisibility();
+                sendAll({type:'SHUFFLE_COMP'});
+                broadcastState();
+            }
+        }
+    }
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
@@ -430,7 +484,7 @@
     function handleDraw(i) {
         const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
         if(isComp || targetNick !== myNick || cardIndex !== null || drawnCards.includes(i)) return;
-        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick); 
+        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick);
     }
 
     function handleCompDraw(i) {
@@ -439,7 +493,7 @@
         drawnCompCards.push(i);
         updateDeckVisibility();
         showSpectrum(i);
-        sendAll({type:'DRAW_COMP', idx:i}); 
+        broadcastState(); 
     }
 
     function showSpectrum(idx) {
@@ -461,15 +515,6 @@
                 document.getElementById('card-podium').style.display='none'; 
             }
         }, 800);
-    }
-
-    function hostCmd(t) {
-        if(!isComp) return;
-        if(t==='CLOSE_COMP') { 
-            compCardIndex = null;
-            hideSpectrum(); 
-            sendAll({type:'CLOSE_COMP'}); 
-        }
     }
 
     function showArchive(idx, nick) {
