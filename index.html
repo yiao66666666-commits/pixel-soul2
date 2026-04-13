@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.11</title>
+    <title>SPEAK V49.12</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -163,27 +163,30 @@
         "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
+    // ==========================================
+    // 🎨 完美修复的纯净直链数组 (移除了所有可能导致崩溃的隐形空格)
+    // ==========================================
     const COMP_CARD_URLS = [
-        "https://imgur.com/pmz4pCX",  
-        "https://imgur.com/LEyyi4h",  
-        "https://imgur.com/CmDDeCW",  
-        "https://imgur.com/rsxQQtg",
-        "https://imgur.com/w1NvgiY",   
-        "https://imgur.com/LcwrSm7",   
-        "https://imgur.com/FCVXQIF", 
-        "https://imgur.com/W5n0Scs",
-        "https://imgur.com/BvZ7nkK",  
-        "https://imgur.com/3cKDRAY",
-        "https://imgur.com/oJoVo7m",  
-        "https://imgur.com/ICtUPF0", 
-        "https://imgur.com/SDmjTLT",  
-        "https://imgur.com/wjJdtHa",   
-        "https://imgur.com/G3nzMEW", 
-        "https://imgur.com/0QP8FPZ",   
-        "https://imgur.com/HOwrdcz",  
-        "https://imgur.com/pzRaHeV",   
-        "https://imgur.com/ZCUfN6b",   
-        "https://imgur.com/dc3q3ps"   
+        "https://i.imgur.com/pmz4pCX.jpg",
+        "https://i.imgur.com/LEyyi4h.jpg",
+        "https://i.imgur.com/CmDDeCW.jpg",
+        "https://i.imgur.com/rsxQQtg.jpg",
+        "https://i.imgur.com/w1NvgiY.jpg",
+        "https://i.imgur.com/LcwrSm7.jpg",
+        "https://i.imgur.com/FCVXQIF.jpg",
+        "https://i.imgur.com/W5n0Scs.jpg",
+        "https://i.imgur.com/BvZ7nkK.jpg",
+        "https://i.imgur.com/3cKDRAY.jpg",
+        "https://i.imgur.com/oJoVo7m.jpg",
+        "https://i.imgur.com/ICtUPF0.jpg",
+        "https://i.imgur.com/SDmjTLT.jpg",
+        "https://i.imgur.com/wjJdtHa.jpg",
+        "https://i.imgur.com/G3nzMEW.jpg",
+        "https://i.imgur.com/0QP8FPZ.jpg",
+        "https://i.imgur.com/HOwrdcz.jpg",
+        "https://i.imgur.com/pzRaHeV.jpg",
+        "https://i.imgur.com/ZCUfN6b.jpg",
+        "https://i.imgur.com/dc3q3ps.jpg"
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
@@ -237,7 +240,7 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
             localStream.getAudioTracks()[0].enabled = false; 
         } catch(e) {
-            alert("⚠️ 麦克风权限获取失败！\n\n请确保：\n1. 使用的是 HTTPS 安全链接\n2. 浏览器未禁止麦克风权限\n\n(将强行以无声模式进入房间)");
+            alert("⚠️ 麦克风权限获取失败！\n\n请确保：\n1. 使用 HTTPS 安全链接\n2. 浏览器未禁止麦克风\n\n(强行以无声模式进入)");
         }
         document.getElementById('audio-overlay').style.display='none';
         initNetwork();
@@ -261,7 +264,6 @@
                 
                 setInterval(() => {
                     if (hasInitialConnection && (Date.now() - lastSyncTime > 10000)) {
-                        console.log("Watchdog: 信号丢失，尝试重新穿透...");
                         hasInitialConnection = false;
                         document.getElementById('process-guide').innerText = "信号断开，正在重连...";
                         document.getElementById('process-guide').style.color = "var(--pink)";
@@ -362,20 +364,15 @@
         });
     }
 
-    // --- 核心修复：牌桌物理隔离 ---
     function renderDeck() {
         if(document.getElementById('deck').innerHTML !== "") return;
         let h=""; 
         
         if(isComp) {
-            // 塔罗区标识
             h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">🔮塔罗区</span></div>`;
-            
             for(let i=0; i<20; i++) {
                 h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
             }
-            
-            // 分界线 + 档案区标识
             h += `<div style="flex:0 0 4px; background:#333; margin: 10px 10px; border-radius:2px;"></div>`;
             h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">📁档案区</span></div>`;
         }
