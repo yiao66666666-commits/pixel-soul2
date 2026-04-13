@@ -3,34 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.0</title>
+    <title>SPEAK V49.2</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
+        /* --- 首页底图动画 --- */
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.5; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
+        /* --- 登录层 --- */
         #login-screen { position: fixed; inset: 0; z-index: 100000; background: rgba(5,5,5,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 3px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; box-shadow: 4px 4px 0 #000; }
 
+        /* --- 游戏主体与布局 --- */
         #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; background: transparent; }
         #process-guide { height: 32px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 900; border-bottom: 1px solid #222; }
         .header-bar { height: 110px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
         #player-area { display: flex; gap: 12px; overflow-x: auto; flex: 1; align-items: center; }
         #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #333; }
+        
         .p-avatar { width: 44px; height: 44px; border: 4px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border-radius: 12px; }
         .active-turn .p-avatar { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); animation: breathe 1s infinite alternate; }
         @keyframes breathe { from { opacity: 0.8; } to { opacity: 1; } }
         .is-companion { border-color: var(--purple) !important; }
 
+        /* --- 13:16 档案卡 (绝对防撑爆) --- */
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; }
         #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 4000; }
         #focus-board { 
             position: absolute; 
-            width: 85vw; max-width: calc(65vh * 0.8125); aspect-ratio: 13 / 16;
+            height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
             background: #fff; color: #111; border: 6px solid #000; border-radius: 24px;
             padding: 30px 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
             z-index: 5001; box-shadow: 20px 20px 0 rgba(0,0,0,0.5);
@@ -38,6 +43,7 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
+        /* --- 控制栏 --- */
         .footer { height: 260px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.85rem; color: var(--blue); }
         .btn-panel { height: 90px; display: flex; padding: 10px; gap: 10px; align-items: center; justify-content: center; }
@@ -68,7 +74,9 @@
     </div>
 </div>
 
-<div id="audio-overlay" class="overlay"><button class="ctrl-btn" style="background:var(--gold); color:#000; width:220px;" onclick="unlockAudio()">同步灵魂频段</button></div>
+<div id="audio-overlay" class="overlay">
+    <button class="ctrl-btn" style="background:var(--gold); color:#000; width:220px;" onclick="unlockAudio()">同步灵魂频段</button>
+</div>
 
 <div id="main-game">
     <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
@@ -84,7 +92,7 @@
         <div id="focus-board">
             <div style="font-size:0.6rem; color:#999; letter-spacing:2px;">[ SENSITIVE FILE ]</div>
             <div id="q-text" style="font-size:1.15rem; font-weight:bold; text-align:center; padding:15px; line-height:1.4;">档案读取中...</div>
-            <button id="btn-close" class="ctrl-btn" style="background:#000; color:var(--gold); border:2px solid var(--gold); width:180px;" onclick="userCmd('CLOSE')">完成回答</button>
+            <button id="btn-close" class="ctrl-btn" style="width:180px; transition:0.3s;" onclick="userCmd('CLOSE')">完成回答</button>
         </div>
         <div id="deck" style="display:none; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
     </div>
@@ -109,42 +117,17 @@
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    // --- 完整植入你提供的所有34个直击灵魂的题库 ---
+    // --- 完整保留你的 34 道题库 ---
     const CUSTOM_QS = [
-        "你上一次哭，是因为什么？",
-        "你觉得这辈子最对不起的人是谁？为什么？",
-        "童年里哪一件看似很小的事情，其实一直负面影响你到现在？",
-        "此时此刻，你生活中最大的焦虑源头究竟是什么？",
-        "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？",
-        "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？",
-        "你这辈子，最想收到谁的一句“对不起”？",
-        "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
-        "你上一次对最亲近的人撒的谎是什么？",
-        "哪一个瞬间，你突然觉得这份工作/这个行业真的把你“榨干”了？",
-        "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？为什么？",
-        "你人生中，哪一天是你打死都不想再经历第二次的？",
-        "如果明天公司突然倒闭了，你心里的第一反应是恐慌，还是长舒一口气？",
-        "如果现在给你一个机会，把工资减半，但每天能准时 5 点下班且绝对没人找你，你会立刻答应，还是犹豫？",
-        "假如现在有个按钮，按下去能彻底清空你关于某一个人的所有记忆，你会按吗？",
-        "如果今天能用你的一年寿命，换取一件你曾经极其渴望但没得到的东西，你会换什么？",
-        "如果给你一千万，条件是立刻和父母和爱人孩子彻底绝交，你换吗？",
-        "如果今晚睡着后，你会进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？",
-        "假设有一瓶吐真剂，你会给谁喝？问他什么问题？",
-        "哪一句父母曾经骂过你的话，你当时很不屑，现在却悲哀地发现自己真的变成了那样？",
-        "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？身边坐着谁？",
-        "如果你有一件“隐身衣”你想利用它去做什么？",
-        "分享一个你的“童年阴影”可以是电影片段，或者生活打击。",
-        "哪一首歌的旋律一响，你的脑子里就会立刻无条件地弹出一个人？",
-        "此时此刻，如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？",
-        "哪一个本来跟你毫无血缘关系的人，曾给过你一种像“亲人”一样的感觉？",
-        "如果人的寿命可以像微信转账一样转给别人，你会把你的一年寿命转给谁？",
-        "如果有一个快进按键，能直接跳过你现在正在熬的这段日子，代价是减寿三年，你会按吗？",
-        "假设你能以上帝视角参加自己的葬礼，你觉得谁会在角落里哭得最伤心？",
-        "如果现在给你一个“合法报复一次”的额度，且绝对不用承担任何后果，你会立刻用在谁身上？",
-        "假设你明天必须彻底离开现在的城市，永远不再回来，走之前你只想最后去见一个人，你会见谁？",
-        "如果你死后，你的手机数据会被毫无保留地公开展示，你最怕被谁看到里面的哪一部分？",
-        "如果可以用一句话总结你上一段失败的感情，你会说什么？",
-        "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
+        "你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？为什么？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？",
+        "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？", "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
+        "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作/这个行业真的把你“榨干”了？", "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？为什么？", "你人生中，哪一天是你打死都不想再经历第二次的？",
+        "如果明天公司突然倒闭了，你心里的第一反应是恐慌，还是长舒一口气？", "如果现在给你一个机会，把工资减半，但每天能准时 5 点下班且绝对没人找你，你会立刻答应，还是犹豫？", "假如现在有个按钮，按下去能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果今天能用你的一年寿命，换取一件你曾经极其渴望但没得到的东西，你会换什么？",
+        "如果给你一千万，条件是立刻和父母和爱人孩子彻底绝交，你换吗？", "如果今晚睡着后，你会进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母曾经骂过你的话，你当时很不屑，现在却悲哀地发现自己真的变成了那样？",
+        "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？身边坐着谁？", "如果你有一件“隐身衣”你想利用它去做什么？", "分享一个你的“童年阴影”可以是电影片段，或者生活打击。", "哪一首歌的旋律一响，你的脑子里就会立刻无条件地弹出一个人？",
+        "此时此刻，如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个本来跟你毫无血缘关系的人，曾给过你一种像“亲人”一样的感觉？", "如果人的寿命可以像微信转账一样转给别人，你会把你的一年寿命转给谁？", "如果有一个快进按键，能直接跳过你现在正在熬的这段日子，代价是减寿三年，你会按吗？",
+        "假设你能以上帝视角参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果现在给你一个“合法报复一次”的额度，且绝对不用承担任何后果，你会立刻用在谁身上？", "假设你明天必须彻底离开现在的城市，永远不再回来，走之前你只想最后去见一个人，你会见谁？", "如果你死后，你的手机数据会被毫无保留地公开展示，你最怕被谁看到里面的哪一部分？",
+        "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
@@ -179,20 +162,29 @@
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
                 players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
-                setInterval(() => { sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, drawnCards:drawnCards, allIds: players.map(p=>p.peerId)}); }, 2000);
+                setInterval(() => { sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, drawnCards:drawnCards, allIds: players.map(p=>p.peerId)}); }, 1000);
             } else {
                 hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
                 setupConn(hostConn);
             }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); });
+        
+        // 核心修复1：防止双向拨号引起的崩溃。被呼叫时，记录对方ID。
         peer.on('call', (call) => {
+            handledIds.add(call.peer); // <--- 关键防环路逻辑
             call.answer(localStream);
             call.on('stream', (s) => {
                 let el = document.getElementById(`audio-${call.peer}`);
-                if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; document.getElementById('audio-bridge').appendChild(el); }
-                el.srcObject = s; el.autoplay = true;
-                el.play().catch(e => console.log("等待交互"));
+                if(!el) { 
+                    el = document.createElement('audio'); 
+                    el.id = `audio-${call.peer}`; 
+                    el.autoplay = true;
+                    el.playsInline = true; // <--- 核心修复2：防iOS安全拦截
+                    document.getElementById('audio-bridge').appendChild(el); 
+                }
+                el.srcObject = s;
+                el.play().catch(e => console.log("iOS交互限制，请确保点击了同意按钮"));
             });
         });
     }
@@ -204,9 +196,7 @@
                 if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); }
             }
             if(d.type==='SYNC') { 
-                players=d.list; turnIdx=d.turnIdx;
-                drawnCards = d.drawnCards || []; 
-                
+                players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; 
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
                 const users = players.filter(p=>!p.isComp);
@@ -219,11 +209,13 @@
                 if(isLocked) updateDeckVisibility();
                 
                 if(d.allIds) d.allIds.forEach(id => {
-                    if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); }
+                    if(id !== peer.id && !handledIds.has(id)) { 
+                        const call = peer.call(id, localStream); 
+                        if(call) handledIds.add(id); 
+                    }
                 });
             }
             if(d.type==='UNLOCK') triggerUnlock();
-            
             if(d.type==='DRAW') { 
                 cardIndex = d.idx; 
                 if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx);
@@ -240,18 +232,17 @@
                 } 
             }
             if(d.type==='CHAT') { 
-                appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); 
+                // 核心修复3：过滤自己发出的重复包，防止回声Bug
+                if (d.nick !== myNick) {
+                    appendChat(d.nick, d.msg); 
+                    if(d.isAnim) triggerAnim(d.msg); 
+                }
                 if(isComp) sendAll(d); 
             }
         });
     }
 
-    function triggerUnlock() { 
-        isLocked = true; 
-        document.getElementById('deck').style.display = 'flex'; 
-        renderDeck(); 
-        updateGuide(); 
-    }
+    function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     
     function sendAll(d) { 
         if (isComp) { conns.forEach(c => { if(c.open) c.send(d); }); } 
@@ -309,7 +300,6 @@
     }
 
     function showArchive(idx, nick) {
-        // [核心植入点]：使用这34道直击灵魂的问题题库
         document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length];
         document.getElementById('card-podium').style.display='block';
         const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
@@ -318,13 +308,30 @@
         document.getElementById('btn-dis').disabled = (myNick === nick);
         document.getElementById('btn-trans').disabled = (myNick !== nick);
         
-        document.getElementById('btn-close').style.display = (myNick === nick) ? 'block' : 'none';
+        const btnClose = document.getElementById('btn-close');
+        btnClose.style.display = 'block'; 
+        if(myNick === nick) {
+            btnClose.disabled = false;
+            btnClose.innerText = "完成回答";
+            btnClose.style.color = "var(--gold)";
+            btnClose.style.borderColor = "var(--gold)";
+            btnClose.style.background = "#000";
+        } else {
+            btnClose.disabled = true;
+            btnClose.innerText = "等待发言...";
+            btnClose.style.color = "#666";
+            btnClose.style.borderColor = "#444";
+            btnClose.style.background = "#111";
+        }
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
     function hideArchive() { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); }
     
-    function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
+    function actionReact(e) { 
+        appendChat(myNick, e); triggerAnim(e); 
+        sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); 
+    }
     
     function sendTextChat() {
         const input = document.getElementById('chat-input');
