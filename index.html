@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.12</title>
+    <title>SPEAK V49.14</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -43,16 +43,18 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
+        /* 塔罗板全貌展示与黑色边框 */
         #comp-card-board {
-            position: absolute; height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
+            position: absolute; height: 68vh; max-width: 90vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
+            padding: 12px;
             display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 6001; box-shadow: 15px 15px 0 rgba(163, 51, 255, 0.4);
             transform: translateY(-100%) scale(0.8); transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0;
-            overflow: hidden;
         }
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
-        #spectrum-img { width: 100%; height: 100%; object-fit: cover; } 
+        /* 使用 contain 保证图像完整，不被裁切 */
+        #spectrum-img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; } 
 
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .ctrl-btn:disabled { opacity: 0.15; border-color: #444; }
@@ -65,6 +67,9 @@
         
         .mic-btn { border-radius: 50%; width: 66px; height: 66px; font-size: 1.6rem; color: #fff; border: 4px solid var(--blue); background: #000; flex-shrink: 0; }
         .mic-btn.active { background: var(--pink); border-color: #fff; }
+
+        /* 拔高牌桌的图层，让陪伴师在别人说牌时也能点击塔罗 */
+        #deck { position: relative; z-index: 4500; }
 
         #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 18px 45px; border-radius: 50px; font-weight: 900; border: 5px solid #fff; box-shadow: 0 0 30px var(--gold); cursor: pointer; }
         .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.85); text-align: center; padding: 20px;}
@@ -163,9 +168,6 @@
         "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
-    // ==========================================
-    // 🎨 完美修复的纯净直链数组 (移除了所有可能导致崩溃的隐形空格)
-    // ==========================================
     const COMP_CARD_URLS = [
         "https://i.imgur.com/pmz4pCX.jpg",
         "https://i.imgur.com/LEyyi4h.jpg",
@@ -249,6 +251,14 @@
     function initNetwork() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
         
+        // 核心防御：防止多个陪伴师用同一个房号进入
+        peer.on('error', (err) => {
+            if (err.type === 'unavailable-id' && isComp) {
+                alert("进入失败：该房间已经有一位陪伴师了！");
+                location.reload();
+            }
+        });
+
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
@@ -296,7 +306,13 @@
         });
         
         c.on('data', (d) => {
-            if(d.type==='JOIN' && isComp) { if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); } }
+            // 彻底移除人数限制，允许任意数量的玩家加入
+            if(d.type==='JOIN' && isComp) { 
+                if(!players.find(p=>p.peerId===d.peerId)) { 
+                    players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
+                    renderUI(); 
+                } 
+            }
             
             if(d.type==='SYNC') { 
                 lastSyncTime = Date.now(); 
@@ -414,7 +430,13 @@
     function hideSpectrum() {
         const board = document.getElementById('comp-card-board');
         board.classList.remove('show');
-        setTimeout(() => { board.style.display = 'none'; document.getElementById('card-podium').style.display='none'; document.getElementById('btn-cc-close').style.display='none'; }, 800);
+        setTimeout(() => { 
+            board.style.display = 'none'; 
+            document.getElementById('btn-cc-close').style.display='none'; 
+            if(cardIndex === null) {
+                document.getElementById('card-podium').style.display='none'; 
+            }
+        }, 800);
     }
 
     function hostCmd(t) {
@@ -438,7 +460,16 @@
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
-    function hideArchive() { document.getElementById('focus-board').classList.remove('show'); setTimeout(()=>{document.getElementById('focus-board').style.display='none';document.getElementById('card-podium').style.display='none';}, 800); }
+    function hideArchive() { 
+        document.getElementById('focus-board').classList.remove('show'); 
+        setTimeout(()=>{
+            document.getElementById('focus-board').style.display='none';
+            if(compCardIndex === null) {
+                document.getElementById('card-podium').style.display='none';
+            }
+        }, 800); 
+    }
+    
     function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
     function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; }
     function triggerAnim(e) { for(let i=0; i<10; i++) { const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='40%'; p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); document.body.appendChild(p); setTimeout(()=>p.remove(), 800); } }
