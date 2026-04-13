@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.18</title>
+    <title>SPEAK V49.19</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -180,10 +180,11 @@
     let cardIndex = null, compCardIndex = null;
     let drawnCards = [], drawnCompCards = [];
     let hostConn = null; 
+    let hideSpecTimer = null, hideArchTimer = null;
     
-    // 【核心修复一】设立动画计时器句柄，防止隐藏动画杀死新弹出的卡牌
-    let hideSpecTimer = null;
-    let hideArchTimer = null;
+    // 【核心修复：状态标识与雷达计时器】
+    let hasInitialConnection = false;
+    let lastSyncTime = Date.now();
 
     const peerConfig = {
         config: {
@@ -239,7 +240,6 @@
         initNetwork();
     }
 
-    // 【核心修复三】温和而持续的状态广播，拯救掉线漏包的玩家
     function broadcastState() {
         if (!isComp) return;
         const state = {
@@ -260,14 +260,11 @@
                 alert("进入失败：该房间已经有一位陪伴师了！");
                 location.reload();
             }
+            // 忽略普通的 peer-unavailable，交给下面的雷达循环去处理
         });
 
         peer.on('disconnected', () => {
             console.log("信令断开，正在原生重连...");
-            if(document.getElementById('process-guide')) {
-                document.getElementById('process-guide').innerText = "信号重连中...";
-                document.getElementById('process-guide').style.color = "var(--pink)";
-            }
             peer.reconnect();
         });
 
@@ -279,11 +276,26 @@
                 players = [{nick:myNick, isComp:true, peerId: id}]; 
                 renderUI();
                 broadcastState(); 
-                // 心跳恢复：每2秒全场广播绝对状态，防止任何人掉队
                 setInterval(broadcastState, 2000); 
             } else { 
                 hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
                 setupConn(hostConn); 
+                
+                // 【核心修复：主动雷达扫房与防断线死锁】
+                setInterval(() => {
+                    if (!hasInitialConnection) {
+                        document.getElementById('process-guide').innerText = "寻找房间中，请稍候...";
+                        document.getElementById('process-guide').style.color = "var(--pink)";
+                        if(hostConn) hostConn.close();
+                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true});
+                        setupConn(hostConn);
+                    } else if (Date.now() - lastSyncTime > 8000) {
+                        hasInitialConnection = false;
+                        document.getElementById('process-guide').innerText = "与房间失去同步，重连中...";
+                        document.getElementById('process-guide').style.color = "var(--pink)";
+                        if(hostConn) hostConn.close();
+                    }
+                }, 3000);
             }
         });
         
@@ -313,6 +325,8 @@
     function setupConn(c) {
         c.on('open', () => {
             if(!isComp) {
+                hasInitialConnection = true;
+                lastSyncTime = Date.now();
                 document.getElementById('process-guide').innerText = "连接成功，读取数据中...";
                 document.getElementById('process-guide').style.color = "var(--blue)";
                 c.send({type:'JOIN', nick:myNick, peerId: peer.id});
@@ -325,17 +339,21 @@
                     players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
                     renderUI(); 
                 } 
-                broadcastState(); // 有人进，立刻广播
+                broadcastState(); 
             }
             
             if(d.type==='SYNC') { 
+                if(!isComp) {
+                    hasInitialConnection = true;
+                    lastSyncTime = Date.now();
+                }
+                
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
                 const users = players.filter(p=>!p.isComp);
                 const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
                 
-                // 更严谨的状态调和：防止卡牌状态错乱
                 if (d.compCardIndex !== compCardIndex) {
                     if (d.compCardIndex !== null) {
                         compCardIndex = d.compCardIndex;
@@ -408,12 +426,7 @@
         
         c.on('close', () => {
             if(!isComp) {
-                document.getElementById('process-guide').innerText = "与房主断开，尝试重连...";
-                document.getElementById('process-guide').style.color = "var(--pink)";
-                setTimeout(() => {
-                    hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
-                    setupConn(hostConn);
-                }, 2000);
+                hasInitialConnection = false;
             }
         });
     }
@@ -437,7 +450,6 @@
         broadcastState(); 
     }
 
-    // 【核心修复二】洗牌时重置一切状态，拔除死锁
     function hostCmd(t) {
         if(!isComp) return;
         if(t==='CLOSE_COMP') { 
@@ -447,8 +459,8 @@
         }
         if(t==='SHUFFLE_COMP') {
             if(confirm("确定要将所有塔罗牌洗回牌库吗？")) {
-                compCardIndex = null; // 强行清除占用
-                hideSpectrum(); // 强行收回
+                compCardIndex = null; 
+                hideSpectrum(); 
                 drawnCompCards = [];
                 updateDeckVisibility();
                 sendAll({type:'SHUFFLE_COMP'});
@@ -524,7 +536,6 @@
         broadcastState(); 
     }
 
-    // 清道夫：打开塔罗时，清掉所有隐藏倒计时
     function showSpectrum(idx) {
         if(hideSpecTimer) clearTimeout(hideSpecTimer);
         const board = document.getElementById('comp-card-board');
@@ -548,7 +559,6 @@
         }, 800);
     }
 
-    // 清道夫：打开档案时，清掉所有隐藏倒计时
     function showArchive(idx, nick) {
         if(hideArchTimer) clearTimeout(hideArchTimer);
         document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length];
