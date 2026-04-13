@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.9</title>
+    <title>SPEAK V49.11</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -17,7 +17,7 @@
         .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 3px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; box-shadow: 4px 4px 0 #000; }
 
         #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; background: transparent; }
-        #process-guide { height: 32px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 900; border-bottom: 1px solid #222; }
+        #process-guide { height: 32px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 900; border-bottom: 1px solid #222; transition: 0.3s; }
         .header-bar { height: 110px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
         #player-area { display: flex; gap: 12px; overflow-x: auto; flex: 1; align-items: center; }
         #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #333; }
@@ -109,7 +109,7 @@
     <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
         <span>ROOM:</span><span id="room-id-val" style="margin-left:10px; background:#000; color:var(--gold); padding:2px 8px;">---</span>
     </div>
-    <div id="process-guide">等待房主同步...</div>
+    <div id="process-guide" style="color:var(--blue);">信号穿透中，请稍候...</div>
     <div class="header-bar">
         <div id="player-area"></div>
         <div id="companion-area"></div>
@@ -163,30 +163,27 @@
         "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
-    // ==========================================
-    // 🎨 请在此处替换为你生成的 20 张图像链接
-    // ==========================================
     const COMP_CARD_URLS = [
-        "https://via.placeholder.com/600x800/220022/ff0055?text=THE+SPARK",  
-        "https://via.placeholder.com/600x800/110022/ffcc00?text=THE+CROWN",  
-        "https://via.placeholder.com/600x800/111111/ff0000?text=THE+TOWER",  
-        "https://via.placeholder.com/600x800/001122/00ffff?text=THE+CHARIOT",
-        "https://via.placeholder.com/600x800/001100/00ff00?text=THE+ECHO",   
-        "https://via.placeholder.com/600x800/000022/0066ff?text=THE+TEAR",   
-        "https://via.placeholder.com/600x800/220022/ff00ff?text=THE+MIRROR", 
-        "https://via.placeholder.com/600x800/331100/ff6600?text=THE+EMBRACE",
-        "https://via.placeholder.com/600x800/00001a/000088?text=THE+OCEAN",  
-        "https://via.placeholder.com/600x800/002222/00ffff?text=THE+FOUNTAIN",
-        "https://via.placeholder.com/600x800/111111/dddddd?text=THE+SWORD",  
-        "https://via.placeholder.com/600x800/220000/ff0000?text=THE+THREAD", 
-        "https://via.placeholder.com/600x800/1a1a2e/4a4e69?text=THE+STORM",  
-        "https://via.placeholder.com/600x800/222222/ffcc00?text=THE+GATE",   
-        "https://via.placeholder.com/600x800/1a0033/6600cc?text=THE+VORTEX", 
-        "https://via.placeholder.com/600x800/33001a/ff00aa?text=THE+MASK",   
-        "https://via.placeholder.com/600x800/221100/ff8800?text=THE+CLOCK",  
-        "https://via.placeholder.com/600x800/332200/ffcc00?text=THE+GOLD",   
-        "https://via.placeholder.com/600x800/000000/00ffff?text=THE+VOID",   
-        "https://via.placeholder.com/600x800/001a00/00ff00?text=THE+WORLD"   
+        "https://imgur.com/pmz4pCX",  
+        "https://imgur.com/LEyyi4h",  
+        "https://imgur.com/CmDDeCW",  
+        "https://imgur.com/rsxQQtg",
+        "https://imgur.com/w1NvgiY",   
+        "https://imgur.com/LcwrSm7",   
+        "https://imgur.com/FCVXQIF", 
+        "https://imgur.com/W5n0Scs",
+        "https://imgur.com/BvZ7nkK",  
+        "https://imgur.com/3cKDRAY",
+        "https://imgur.com/oJoVo7m",  
+        "https://imgur.com/ICtUPF0", 
+        "https://imgur.com/SDmjTLT",  
+        "https://imgur.com/wjJdtHa",   
+        "https://imgur.com/G3nzMEW", 
+        "https://imgur.com/0QP8FPZ",   
+        "https://imgur.com/HOwrdcz",  
+        "https://imgur.com/pzRaHeV",   
+        "https://imgur.com/ZCUfN6b",   
+        "https://imgur.com/dc3q3ps"   
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
@@ -194,14 +191,14 @@
     let drawnCards = [], drawnCompCards = [];
     let compCardIndex = null;
     let lastSyncTime = Date.now();
+    let hasInitialConnection = false; 
 
-    // 核心修复：注入 Google STUN 穿透服务器
     const peerConfig = {
         config: {
             'iceServers': [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:global.stun.twilio.com:3478' },
+                { urls: 'stun:stun.cloudflare.com:3478' }
             ]
         }
     };
@@ -235,7 +232,6 @@
         document.getElementById('audio-overlay').style.display='flex';
     }
 
-    // 核心修复：解绑麦克风卡死
     async function unlockAudio() {
         try { 
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
@@ -253,20 +249,24 @@
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
+                document.getElementById('process-guide').innerText = "等待玩家入场...";
+                document.getElementById('process-guide').style.color = "var(--gold)";
                 players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
                 setInterval(() => { 
                     sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); 
                 }, 1000);
             } else { 
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
                 setupConn(hostConn); 
                 
-                // 核心修复：放宽至 8 秒的断线容忍度
                 setInterval(() => {
-                    if (Date.now() - lastSyncTime > 8000) {
-                        console.log("Watchdog: Connection timeout, reconnecting to host...");
+                    if (hasInitialConnection && (Date.now() - lastSyncTime > 10000)) {
+                        console.log("Watchdog: 信号丢失，尝试重新穿透...");
+                        hasInitialConnection = false;
+                        document.getElementById('process-guide').innerText = "信号断开，正在重连...";
+                        document.getElementById('process-guide').style.color = "var(--pink)";
                         if(hostConn) hostConn.close();
-                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}});
+                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true});
                         setupConn(hostConn);
                         lastSyncTime = Date.now();
                     }
@@ -288,12 +288,18 @@
     }
 
     function setupConn(c) {
-        c.on('open', () => c.send({type:'JOIN', nick:myNick, peerId: peer.id}));
+        c.on('open', () => {
+            hasInitialConnection = true; 
+            c.send({type:'JOIN', nick:myNick, peerId: peer.id});
+        });
+        
         c.on('data', (d) => {
             if(d.type==='JOIN' && isComp) { if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); } }
             
             if(d.type==='SYNC') { 
-                lastSyncTime = Date.now();
+                lastSyncTime = Date.now(); 
+                hasInitialConnection = true;
+                
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
@@ -333,6 +339,7 @@
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
+        guide.style.color = "var(--gold)"; 
         if(!isLocked) { guide.innerText = "等待房主开启..."; return; }
         const users = players.filter(p=>!p.isComp);
         const targetNick = users[turnIdx] ? users[turnIdx].nick : '---';
@@ -355,14 +362,22 @@
         });
     }
 
+    // --- 核心修复：牌桌物理隔离 ---
     function renderDeck() {
         if(document.getElementById('deck').innerHTML !== "") return;
         let h=""; 
         
         if(isComp) {
+            // 塔罗区标识
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">🔮塔罗区</span></div>`;
+            
             for(let i=0; i<20; i++) {
                 h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
             }
+            
+            // 分界线 + 档案区标识
+            h += `<div style="flex:0 0 4px; background:#333; margin: 10px 10px; border-radius:2px;"></div>`;
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">📁档案区</span></div>`;
         }
 
         for(let i=0; i<40; i++) {
