@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.14</title>
+    <title>SPEAK V49.15</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -43,7 +43,6 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
-        /* 塔罗板全貌展示与黑色边框 */
         #comp-card-board {
             position: absolute; height: 68vh; max-width: 90vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
@@ -53,7 +52,6 @@
             transform: translateY(-100%) scale(0.8); transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0;
         }
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
-        /* 使用 contain 保证图像完整，不被裁切 */
         #spectrum-img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; } 
 
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
@@ -68,7 +66,6 @@
         .mic-btn { border-radius: 50%; width: 66px; height: 66px; font-size: 1.6rem; color: #fff; border: 4px solid var(--blue); background: #000; flex-shrink: 0; }
         .mic-btn.active { background: var(--pink); border-color: #fff; }
 
-        /* 拔高牌桌的图层，让陪伴师在别人说牌时也能点击塔罗 */
         #deck { position: relative; z-index: 4500; }
 
         #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 18px 45px; border-radius: 50px; font-weight: 900; border: 5px solid #fff; box-shadow: 0 0 30px var(--gold); cursor: pointer; }
@@ -169,34 +166,17 @@
     ];
 
     const COMP_CARD_URLS = [
-        "https://i.imgur.com/pmz4pCX.jpg",
-        "https://i.imgur.com/LEyyi4h.jpg",
-        "https://i.imgur.com/CmDDeCW.jpg",
-        "https://i.imgur.com/rsxQQtg.jpg",
-        "https://i.imgur.com/w1NvgiY.jpg",
-        "https://i.imgur.com/LcwrSm7.jpg",
-        "https://i.imgur.com/FCVXQIF.jpg",
-        "https://i.imgur.com/W5n0Scs.jpg",
-        "https://i.imgur.com/BvZ7nkK.jpg",
-        "https://i.imgur.com/3cKDRAY.jpg",
-        "https://i.imgur.com/oJoVo7m.jpg",
-        "https://i.imgur.com/ICtUPF0.jpg",
-        "https://i.imgur.com/SDmjTLT.jpg",
-        "https://i.imgur.com/wjJdtHa.jpg",
-        "https://i.imgur.com/G3nzMEW.jpg",
-        "https://i.imgur.com/0QP8FPZ.jpg",
-        "https://i.imgur.com/HOwrdcz.jpg",
-        "https://i.imgur.com/pzRaHeV.jpg",
-        "https://i.imgur.com/ZCUfN6b.jpg",
-        "https://i.imgur.com/dc3q3ps.jpg"
+        "https://i.imgur.com/pmz4pCX.jpg", "https://i.imgur.com/LEyyi4h.jpg", "https://i.imgur.com/CmDDeCW.jpg", "https://i.imgur.com/rsxQQtg.jpg",
+        "https://i.imgur.com/w1NvgiY.jpg", "https://i.imgur.com/LcwrSm7.jpg", "https://i.imgur.com/FCVXQIF.jpg", "https://i.imgur.com/W5n0Scs.jpg",
+        "https://i.imgur.com/BvZ7nkK.jpg", "https://i.imgur.com/3cKDRAY.jpg", "https://i.imgur.com/oJoVo7m.jpg", "https://i.imgur.com/ICtUPF0.jpg",
+        "https://i.imgur.com/SDmjTLT.jpg", "https://i.imgur.com/wjJdtHa.jpg", "https://i.imgur.com/G3nzMEW.jpg", "https://i.imgur.com/0QP8FPZ.jpg",
+        "https://i.imgur.com/HOwrdcz.jpg", "https://i.imgur.com/pzRaHeV.jpg", "https://i.imgur.com/ZCUfN6b.jpg", "https://i.imgur.com/dc3q3ps.jpg"
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
     let hostConn = null; 
     let drawnCards = [], drawnCompCards = [];
     let compCardIndex = null;
-    let lastSyncTime = Date.now();
-    let hasInitialConnection = false; 
 
     const peerConfig = {
         config: {
@@ -242,7 +222,7 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
             localStream.getAudioTracks()[0].enabled = false; 
         } catch(e) {
-            alert("⚠️ 麦克风权限获取失败！\n\n请确保：\n1. 使用 HTTPS 安全链接\n2. 浏览器未禁止麦克风\n\n(强行以无声模式进入)");
+            alert("⚠️ 麦克风权限获取失败，将强行以无声模式进入");
         }
         document.getElementById('audio-overlay').style.display='none';
         initNetwork();
@@ -251,12 +231,19 @@
     function initNetwork() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
         
-        // 核心防御：防止多个陪伴师用同一个房号进入
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id' && isComp) {
                 alert("进入失败：该房间已经有一位陪伴师了！");
                 location.reload();
             }
+        });
+
+        // 修复：原生断线重连，替代暴力的 Watchdog
+        peer.on('disconnected', () => {
+            console.log("PeerJS 失去连接，正在尝试重连...");
+            document.getElementById('process-guide').innerText = "信号不稳定，重连中...";
+            document.getElementById('process-guide').style.color = "var(--pink)";
+            peer.reconnect();
         });
 
         peer.on('open', (id) => {
@@ -269,24 +256,22 @@
                     sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); 
                 }, 1000);
             } else { 
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
                 setupConn(hostConn); 
-                
-                setInterval(() => {
-                    if (hasInitialConnection && (Date.now() - lastSyncTime > 10000)) {
-                        hasInitialConnection = false;
-                        document.getElementById('process-guide').innerText = "信号断开，正在重连...";
-                        document.getElementById('process-guide').style.color = "var(--pink)";
-                        if(hostConn) hostConn.close();
-                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true});
-                        setupConn(hostConn);
-                        lastSyncTime = Date.now();
-                    }
-                }, 3000);
             }
         });
         
-        peer.on('connection', (c) => { conns.push(c); setupConn(c); });
+        peer.on('connection', (c) => { 
+            conns.push(c); 
+            setupConn(c); 
+            // 清理断开的幽灵玩家
+            c.on('close', () => {
+                if(isComp) {
+                    players = players.filter(p => p.peerId !== c.peer);
+                    renderUI();
+                }
+            });
+        });
         
         peer.on('call', (call) => {
             handledIds.add(call.peer);
@@ -301,12 +286,12 @@
 
     function setupConn(c) {
         c.on('open', () => {
-            hasInitialConnection = true; 
+            document.getElementById('process-guide').innerText = "连接已建立，同步中...";
+            document.getElementById('process-guide').style.color = "var(--blue)";
             c.send({type:'JOIN', nick:myNick, peerId: peer.id});
         });
         
         c.on('data', (d) => {
-            // 彻底移除人数限制，允许任意数量的玩家加入
             if(d.type==='JOIN' && isComp) { 
                 if(!players.find(p=>p.peerId===d.peerId)) { 
                     players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
@@ -315,9 +300,6 @@
             }
             
             if(d.type==='SYNC') { 
-                lastSyncTime = Date.now(); 
-                hasInitialConnection = true;
-                
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
@@ -337,20 +319,55 @@
             }
             if(d.type==='UNLOCK') triggerUnlock();
             
-            if(d.type==='DRAW') { cardIndex = d.idx; if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); updateDeckVisibility(); showArchive(d.idx, d.nick); if(isComp) sendAll(d); }
-            if(d.type==='CLOSE') { hideArchive(); cardIndex = null; if(isComp) { const users = players.filter(p=>!p.isComp); if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); } }
+            // 核心修复：房主作为绝对的数据源处理所有 DRAW，杜绝状态冲突
+            if(d.type==='DRAW') { 
+                cardIndex = d.idx; 
+                if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); 
+                updateDeckVisibility(); 
+                showArchive(d.idx, d.nick); 
+                if(isComp) sendAll(d); 
+            }
+            if(d.type==='CLOSE') { 
+                hideArchive(); cardIndex = null; 
+                if(isComp) { 
+                    const users = players.filter(p=>!p.isComp); 
+                    if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; 
+                    sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); 
+                } 
+            }
             if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); } if(isComp) sendAll(d); }
             
-            if(d.type==='DRAW_COMP') { compCardIndex = d.idx; if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); updateDeckVisibility(); showSpectrum(d.idx); if(isComp) sendAll(d); }
+            if(d.type==='DRAW_COMP') { 
+                compCardIndex = d.idx; 
+                if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); 
+                updateDeckVisibility(); 
+                showSpectrum(d.idx); 
+                if(isComp) sendAll(d); 
+            }
             if(d.type==='CLOSE_COMP') { hideSpectrum(); compCardIndex = null; if(isComp) sendAll(d); }
+        });
+        
+        c.on('close', () => {
+            if(!isComp) {
+                document.getElementById('process-guide').innerText = "与房主断开，尝试重连...";
+                document.getElementById('process-guide').style.color = "var(--pink)";
+                // 如果断开，重新建立数据通道
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                setupConn(hostConn);
+            }
         });
     }
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     
+    // 核心修复：每次发送前清理断掉的连接，防止拥堵
     function sendAll(d) { 
-        if (isComp) { conns.forEach(c => { if(c.open) c.send(d); }); } 
-        else { if (hostConn && hostConn.open) hostConn.send(d); } 
+        if (isComp) { 
+            conns = conns.filter(c => c.open);
+            conns.forEach(c => c.send(d)); 
+        } else { 
+            if (hostConn && hostConn.open) hostConn.send(d); 
+        } 
     }
     
     function hostGo() { document.getElementById('host-start-btn').style.display='none'; triggerUnlock(); sendAll({type:'UNLOCK'}); sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
@@ -407,15 +424,21 @@
         }
     }
 
+    // 核心修复：抽取时不本地直接展示，只发给房主处理，由房主盖章后统一广播，杜绝闪屏
     function handleDraw(i) {
         const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
         if(isComp || targetNick !== myNick || cardIndex !== null || drawnCards.includes(i)) return;
-        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick);
+        sendAll({type:'DRAW', idx:i, nick:myNick}); 
     }
 
     function handleCompDraw(i) {
         if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return;
-        sendAll({type:'DRAW_COMP', idx:i}); showSpectrum(i);
+        // 房主直接处理状态并广播
+        compCardIndex = i;
+        drawnCompCards.push(i);
+        updateDeckVisibility();
+        showSpectrum(i);
+        sendAll({type:'DRAW_COMP', idx:i}); 
     }
 
     function showSpectrum(idx) {
@@ -441,7 +464,11 @@
 
     function hostCmd(t) {
         if(!isComp) return;
-        if(t==='CLOSE_COMP') { sendAll({type:'CLOSE_COMP'}); hideSpectrum(); compCardIndex = null; }
+        if(t==='CLOSE_COMP') { 
+            compCardIndex = null;
+            hideSpectrum(); 
+            sendAll({type:'CLOSE_COMP'}); 
+        }
     }
 
     function showArchive(idx, nick) {
