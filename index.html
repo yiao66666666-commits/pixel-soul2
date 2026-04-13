@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.27 - optimized</title>
+    <title>SPEAK V49.28 - Control</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -19,56 +19,53 @@
         #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; background: transparent; }
         #process-guide { height: 32px; background: rgba(255,255,255,0.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; border-bottom: 1px solid #222; }
         
-        .header-bar { height: 100px; display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
-        #player-area { display: flex; gap: 12px; overflow-x: auto; flex: 1; align-items: center; }
-        #companion-area { width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #333; }
+        .header-bar { height: 90px; display: flex; justify-content: space-between; padding: 5px 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #222; }
+        #player-area { display: flex; gap: 10px; overflow-x: auto; flex: 1; align-items: center; }
+        #companion-area { width: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #333; }
         
-        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; opacity: 0.5; transition: 0.3s; }
+        .p-item { display: flex; flex-direction: column; align-items: center; min-width: 55px; opacity: 0.5; transition: 0.3s; }
         .p-item.online { opacity: 1; }
-        .p-avatar { width: 40px; height: 40px; border: 3px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1rem; border-radius: 10px; }
+        .p-avatar { width: 38px; height: 38px; border: 3px solid #333; background: #111; display: flex; align-items: center; justify-content: center; font-size: 1rem; border-radius: 8px; }
         .is-companion { border-color: var(--purple) !important; }
-        .p-item.active-turn { border-color: var(--blue); background: rgba(0, 242, 255, 0.1); }
+        .p-item.active-turn { border-color: var(--blue); background: rgba(0, 242, 255, 0.1); box-shadow: 0 0 10px var(--blue); }
 
-        .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; padding: 10px; z-index: 10; }
-        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 4000; }
+        .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; perspective: 2000px; padding-bottom: 30px; z-index: 10; overflow: hidden; }
+        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 4000; }
         
-        /* 档案卡优化：缩小高度避让底部 */
+        /* 档案卡修正：高度压缩至50vh，避让聊天框 */
         #focus-board { 
-            position: absolute; width: 82vw; height: 55vh; max-width: 360px; aspect-ratio: 13/16;
-            background: #fff; color: #111; border: 6px solid #000; border-radius: 20px;
-            padding: 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
+            position: absolute; width: 80vw; height: 50vh; max-width: 340px; aspect-ratio: 13/16;
+            background: #fff; color: #111; border: 6px solid #000; border-radius: 18px;
+            padding: 15px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
             z-index: 5001; transform: translateY(100%) rotateX(-180deg); transition: 0.5s;
         }
-        #focus-board.show { display: flex; transform: translateY(-5%) rotateX(0deg); opacity: 1; }
+        #focus-board.show { display: flex; transform: translateY(-10%) rotateX(0deg); opacity: 1; }
 
-        /* 塔罗板优化：缩小高度，防止踩到按钮 */
+        /* 塔罗板修正 */
         #comp-card-board {
-            position: absolute; width: 85vw; height: 58vh; max-width: 380px; aspect-ratio: 13/16;
-            background: #000; border: 4px solid var(--purple); border-radius: 24px;
-            padding: 8px; display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 6001; box-shadow: 0 0 30px rgba(163, 51, 255, 0.4);
-            transform: translateY(-100%) scale(0.8); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0;
+            position: absolute; width: 85vw; height: 54vh; max-width: 360px; aspect-ratio: 13/16;
+            background: #000; border: 4px solid var(--purple); border-radius: 20px;
+            padding: 8px; display: none; flex-direction: column; align-items: center;
+            z-index: 6001; transform: translateY(-100%) scale(0.8); transition: 0.5s;
         }
-        #comp-card-board.show { display: flex; transform: translateY(-5%) scale(1); opacity: 1; }
+        #comp-card-board.show { display: flex; transform: translateY(-10%) scale(1); opacity: 1; }
+        #spectrum-img { flex: 1; width: 100%; object-fit: contain; border-radius: 10px; background: #000; display: none; } 
         
-        #spectrum-img { width: 100%; height: 82%; object-fit: contain; border-radius: 12px; background: #000; display: none; } 
-        
-        /* 加载动画 */
-        #img-loader { width: 40px; height: 40px; border: 4px solid var(--purple); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* 隐藏态：当陪伴师点击“藏牌”时使用 */
+        .podium-hidden { opacity: 0.1 !important; pointer-events: none !important; }
 
-        .ctrl-btn { height: 44px; border: 3px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; border-radius: 8px; cursor: pointer; }
-        .ctrl-btn:active { transform: scale(0.95); }
-
-        .footer { height: 250px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; z-index: 100; }
+        .ctrl-btn { height: 40px; border: 3px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; border-radius: 8px; cursor: pointer; }
+        .footer { height: 240px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; z-index: 100; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.8rem; color: var(--blue); }
-        .btn-panel { height: 80px; display: flex; padding: 5px 10px; gap: 8px; align-items: center; justify-content: center; background: #000; }
+        .btn-panel { height: 80px; display: flex; padding: 5px 10px; gap: 8px; align-items: center; justify-content: center; }
         .mic-btn { border-radius: 50%; width: 55px; height: 55px; font-size: 1.4rem; color: #fff; border: 4px solid var(--blue); background: #000; }
-        .mic-btn.active { background: var(--pink); border-color: #fff; box-shadow: 0 0 15px var(--pink); }
+        .mic-btn.active { background: var(--pink); border-color: #fff; }
         
         #deck { position: relative; z-index: 4500; }
         #host-start-btn { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 150000; display: none; background: var(--gold); color: #000; padding: 15px 40px; border-radius: 50px; font-weight: 900; border: 4px solid #fff; box-shadow: 0 0 20px var(--gold); }
         .overlay { position: fixed; inset: 0; z-index: 200000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); background: rgba(0,0,0,0.85); }
+        #img-loader { width: 30px; height: 30px; border: 3px solid var(--purple); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -80,27 +77,30 @@
     <input type="text" id="nick-in" class="pixel-input" placeholder="昵称">
     <input type="text" id="room-in" class="pixel-input" placeholder="房号">
     <button class="ctrl-btn" style="width:260px; height:55px;" onclick="entry('join')">进入游戏</button>
-    <button onclick="tryCompanion()" style="margin-top:20px; color:var(--purple); font-size:0.7rem; background:none; text-decoration:underline;">陪伴师入口</button>
+    <button onclick="tryCompanion()" style="margin-top:20px; color:var(--purple); font-size:0.75rem; background:none; text-decoration:underline;">陪伴师入口</button>
 </div>
 
 <div id="main-game">
-    <div style="height:32px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.75rem;">
-        <span>ROOM:</span><span id="room-id-val" style="margin-left:8px; background:#000; color:var(--gold); padding:1px 6px;">---</span>
-        <button id="btn-shuffle" class="ctrl-btn" style="display:none; height:20px; font-size:0.6rem; margin-left:auto; border-width:2px; border-color:var(--purple); color:var(--purple); padding:0 5px;" onclick="hostCmd('SHUFFLE_COMP')">🔄 洗牌</button>
+    <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 10px; font-weight:900; font-size:0.75rem;">
+        <span>ROOM:</span><span id="room-id-val" style="margin-left:5px; background:#000; color:var(--gold); padding:1px 5px;">---</span>
+        <div style="margin-left:auto; display:flex; gap:5px;">
+            <button id="btn-eye" class="ctrl-btn" style="display:none; height:24px; font-size:0.6rem; border-color:var(--gold); color:var(--gold); padding:0 6px;" onclick="hostCmd('TOGGLE_EYE')">👁️ 藏牌</button>
+            <button id="btn-shuffle" class="ctrl-btn" style="display:none; height:24px; font-size:0.6rem; border-color:var(--purple); color:var(--purple); padding:0 6px;" onclick="hostCmd('SHUFFLE_COMP')">🔄 洗牌</button>
+        </div>
     </div>
-    <div id="process-guide">寻找信号源中...</div>
+    <div id="process-guide">寻找信号源...</div>
     <div class="header-bar"><div id="player-area"></div><div id="companion-area"></div></div>
     <div class="stage">
         <div id="card-podium"></div>
         <div id="focus-board">
-            <div style="font-size:0.6rem; color:#999;">[ SENSITIVE FILE ]</div>
-            <div id="q-text" style="font-size:1rem; font-weight:bold; text-align:center; padding:10px; line-height:1.5;">档案读取中...</div>
-            <button id="btn-close" class="ctrl-btn" style="width:140px; border-width:3px;" onclick="userCmd('CLOSE')">回答完毕</button>
+            <div style="font-size:0.55rem; color:#999;">[ SENSITIVE FILE ]</div>
+            <div id="q-text" style="font-size:0.95rem; font-weight:bold; text-align:center; padding:5px; line-height:1.4;">档案读取中...</div>
+            <button id="btn-close" class="ctrl-btn" style="width:130px; border-width:3px;" onclick="userCmd('CLOSE')">完成回答</button>
         </div>
         <div id="comp-card-board">
             <div id="img-loader"></div>
             <img id="spectrum-img" src="" alt="Tarot">
-            <button id="btn-cc-close" class="ctrl-btn" style="width:160px; border-color:var(--purple); color:var(--gold); margin-top:10px; display:none;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
+            <button id="btn-cc-close" class="ctrl-btn" style="width:150px; border-color:var(--purple); color:var(--gold); margin-top:8px; display:none;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
         </div>
         <div id="deck" style="display:none; gap:10px; overflow-x:auto; padding:15px; width:100%;"></div>
     </div>
@@ -118,7 +118,7 @@
 
 <div id="pwd-overlay" class="overlay">
     <div style="background:#eee; color:#111; padding:25px; border-radius:15px; border:4px solid #000; width:80%; max-width:300px; text-align:center;">
-        <h3 style="margin-bottom:15px;">- 陪伴师认证 -</h3>
+        <h3 style="margin-bottom:15px;">认证</h3>
         <input type="password" id="comp-pwd-in" style="width:100%; padding:10px; border:3px solid #333; margin-bottom:15px; font-size:1.4rem; text-align:center;" placeholder="暗号">
         <div style="display:flex; gap:10px;"><button class="ctrl-btn" style="flex:1; border-color:#888; color:#888;" onclick="document.getElementById('pwd-overlay').style.display='none'">返回</button><button class="ctrl-btn" style="flex:1; border-color:var(--pink); color:var(--pink);" onclick="checkPwd()">确认</button></div>
     </div>
@@ -130,9 +130,6 @@
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    // ==========================================
-    // 🎨【图片链接库】已更新为 Postimages 直链
-    // ==========================================
     const COMP_CARD_URLS = [
         "https://i.postimg.cc/WdQK2bPm/jimeng-2026-04-3-076-bao-liu-ka-bian-ti-huan-ka-nei-rong-yi-zhang-fu-za-de-ta-luo-pai-cha-hua-8-bit-xiang-su-yi-shu-feng-ge-an-hei-sai-bo-peng-ke-bei.png",
         "https://i.postimg.cc/ThRs24ZG/jimeng-2026-04-3-2244-bao-liu-ka-bian-ti-huan-ka-nei-rong-yi-zhang-fu-za-de-ta-luo-pai-cha-hua-8-bit-xiang-su-yi-shu-feng-ge-an-hei-sai-bo-peng-ke-bei.png",
@@ -158,15 +155,32 @@
 
     const CUSTOM_QS = ["你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？", "如果生命只剩最后24小时，你会去见谁？", "谁曾经对你特别好，但后来你们却断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？", "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作真的把你榨干了？", "谁的消息会让你看到就瞬间心跳加速、感到生理性不适？", "你人生中，哪一天是你打死都不想再经历第二次的？", "如果明天公司倒闭了，你第一反应是恐慌还是长舒一口气？", "给你一个机会工资减半但每天准时下班且没人找你，你会立刻答应吗？", "假如有个按钮能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果用一年寿命换取一件极其渴望但没得到的东西，你会换什么？", "给你一千万条件是立刻和父母爱人彻底绝交，你换吗？", "如果你进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母骂过你的话，你当时很不屑现在却发现自己变成了那样？", "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？", "如果你有一件隐身衣你想利用它去做什么？", "分享一个你的童年阴影，可以是电影片段或生活打击。", "哪一首歌旋律一响，你的脑子里就会无条件弹出一个人？", "如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个毫无血缘关系的人，曾给你一种像亲人一样的感觉？", "如果寿命可以像微信转账一样转给别人，你会转给谁？", "如果有一个快进键跳过现在的苦难但代价是减寿三年，你会按吗？", "假设你能参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果给你一个“合法报复一次”的额度，你会立刻用在谁身上？", "假设你明天必须彻底离开，走之前你只想最后去见一个人，是谁？", "如果你死后手机数据会被公开，你最怕被谁看到里面的哪部分？", "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念却再也找不到的一种感觉是什么？"];
     const peerConfig = { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] } };
+    
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
     let cardIndex=null, compCardIndex=null, drawnCards=[], drawnCompCards=[], hostConn=null, hasInitialConnection=false, lastSyncTime=Date.now();
+    let isEyeClosed = false; // 藏牌状态
 
     function tryCompanion() { if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("先填昵称房号"); document.getElementById('comp-pwd-in').value = ''; document.getElementById('pwd-overlay').style.display = 'flex'; }
     function checkPwd() { if(document.getElementById('comp-pwd-in').value === '101010') { document.getElementById('pwd-overlay').style.display='none'; entry('companion'); } else { alert("密码错误"); } }
     function restore(t) { if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || ""; if(t==='room') document.getElementById('room-in').value = localStorage.getItem('sr') || ""; }
-    function entry(m) { myNick=document.getElementById('nick-in').value; myRoom=document.getElementById('room-in').value; if(!myNick||!myRoom) return alert("必填"); isComp=(m==='companion'); localStorage.setItem('sn',myNick); localStorage.setItem('sr',myRoom); document.getElementById('login-screen').style.display='none'; document.getElementById('main-game').style.display='flex'; if(isComp){ document.getElementById('host-start-btn').style.display='block'; document.getElementById('btn-shuffle').style.display='block'; } document.getElementById('audio-overlay').style.display='flex'; }
-    async function unlockAudio() { try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) {} document.getElementById('audio-overlay').style.display='none'; initNetwork(); }
-    function broadcastState() { if (!isComp) return; sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId) }); }
+    
+    function entry(m) { 
+        myNick=document.getElementById('nick-in').value; myRoom=document.getElementById('room-in').value; if(!myNick||!myRoom) return alert("必填"); 
+        isComp=(m==='companion'); localStorage.setItem('sn',myNick); localStorage.setItem('sr',myRoom); 
+        document.getElementById('login-screen').style.display='none'; document.getElementById('main-game').style.display='flex'; 
+        if(isComp){ document.getElementById('host-start-btn').style.display='block'; document.getElementById('btn-shuffle').style.display='block'; document.getElementById('btn-eye').style.display='block'; } 
+        document.getElementById('audio-overlay').style.display='flex'; 
+    }
+
+    async function unlockAudio() { 
+        try { 
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+            localStream.getAudioTracks()[0].enabled = false; 
+        } catch(e) { console.log("Mic blocked"); } 
+        document.getElementById('audio-overlay').style.display='none'; initNetwork(); 
+    }
+
+    function broadcastState() { if (!isComp) return; sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId), isEyeClosed: isEyeClosed }); }
 
     function initNetwork() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
@@ -181,7 +195,14 @@
             }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); c.on('close', () => { if(isComp) { players = players.filter(p => p.peerId !== c.peer); renderUI(); broadcastState(); } }); });
-        peer.on('call', (call) => { handledIds.add(call.peer); call.answer(localStream || null); call.on('stream', (s) => { let el = document.getElementById(`audio-${call.peer}`); if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; el.autoplay = true; el.srcObject = s; document.body.appendChild(el); } }); });
+        peer.on('call', (call) => { 
+            handledIds.add(call.peer); call.answer(localStream); 
+            call.on('stream', (s) => { 
+                let el = document.getElementById(`audio-${call.peer}`); 
+                if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); } 
+                el.srcObject = s; el.play().catch(e=>console.log("iOS fix"));
+            }); 
+        });
     }
 
     function setupConn(c) {
@@ -191,6 +212,7 @@
             if(d.type==='SYNC') { 
                 hasInitialConnection = true; lastSyncTime = Date.now(); players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
+                isEyeClosed = d.isEyeClosed; updateEyeVisuals();
                 if (d.compCardIndex !== compCardIndex) { if (d.compCardIndex !== null) { compCardIndex = d.compCardIndex; showSpectrum(compCardIndex); } else { compCardIndex = null; hideSpectrum(); } }
                 if (d.cardIndex !== cardIndex) { if (d.cardIndex !== null) { cardIndex = d.cardIndex; showArchive(cardIndex, (players.filter(p=>!p.isComp)[turnIdx]||{}).nick); } else { cardIndex = null; hideArchive(); } }
                 renderUI(); updateGuide(); if(isLocked) updateDeckVisibility();
@@ -209,10 +231,37 @@
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     function sendAll(d) { if (isComp) { conns = conns.filter(c => c.open); conns.forEach(c => c.send(d)); } else { if (hostConn && hostConn.open) hostConn.send(d); } }
     function hostGo() { isLocked = true; triggerUnlock(); sendAll({type:'UNLOCK'}); document.getElementById('host-start-btn').style.display='none'; broadcastState(); }
-    function hostCmd(t) { if(!isComp) return; if(t==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); broadcastState(); } if(t==='SHUFFLE_COMP' && confirm("洗牌所有塔罗？")) { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); sendAll({type:'SHUFFLE_COMP'}); broadcastState(); } }
+    
+    function hostCmd(t) {
+        if(!isComp) return;
+        if(t==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); broadcastState(); }
+        if(t==='SHUFFLE_COMP' && confirm("洗牌所有塔罗？")) { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); sendAll({type:'SHUFFLE_COMP'}); broadcastState(); }
+        if(t==='TOGGLE_EYE') { isEyeClosed = !isEyeClosed; updateEyeVisuals(); broadcastState(); }
+    }
+
+    function updateEyeVisuals() {
+        const boards = [document.getElementById('focus-board'), document.getElementById('comp-card-board')];
+        const btn = document.getElementById('btn-eye');
+        boards.forEach(b => { if(b) b.classList.toggle('podium-hidden', isEyeClosed); });
+        if(btn) { btn.innerText = isEyeClosed ? "👁️ 显牌" : "👁️ 藏牌"; btn.style.borderColor = isEyeClosed ? "var(--pink)" : "var(--gold)"; btn.style.color = isEyeClosed ? "var(--pink)" : "var(--gold)"; }
+    }
+
     function updateGuide() { const g = document.getElementById('process-guide'); if(!isLocked) return; const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : '---'; g.innerText = cardIndex !== null ? `[ ${targetNick} ] 正在坦白...` : `轮到 [ ${targetNick} ] 开启档案...`; }
-    function renderUI() { const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area'); pA.innerHTML = ""; cA.innerHTML = ""; const targetNick = (players.filter(p=>!p.isComp)[turnIdx]||{}).nick; players.forEach(p => { const isTurn = (!p.isComp && p.nick === targetNick); const h = `<div class="p-item online ${isTurn?'active-turn':''}"> <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div> <div style="font-size:0.55rem;margin-top:5px;color:#aaa;width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;">${p.nick}</div> </div>`; if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h; }); }
-    function renderDeck() { if(document.getElementById('deck').innerHTML !== "") return; let h=""; if(isComp) { h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.8rem;">🔮塔罗区</span></div>`; for(let i=0; i<20; i++) h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 90px; height:140px; background:#4b0082; border:2px solid #555; border-radius:8px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:5px; left:5px; font-size:0.7rem; background:#000; border-radius:50%;">🔮</div></div>`; h += `<div style="flex:0 0 3px; background:#333; margin: 10px 5px;"></div>`; h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.8rem;">📁档案区</span></div>`; } for(let i=0; i<40; i++) h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 90px; height:140px; background:#2a104a; border:2px solid #555; border-radius:8px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`; document.getElementById('deck').innerHTML = h; updateDeckVisibility(); }
+    function renderUI() { const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area'); pA.innerHTML = ""; cA.innerHTML = ""; const targetNick = (players.filter(p=>!p.isComp)[turnIdx]||{}).nick; players.forEach(p => { const isTurn = (!p.isComp && p.nick === targetNick); const h = `<div class="p-item online ${isTurn?'active-turn':''}"> <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div> <div style="font-size:0.5rem;margin-top:4px;color:#aaa;width:55px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;">${p.nick}</div> </div>`; if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h; }); }
+    
+    function renderDeck() { 
+        if(document.getElementById('deck').innerHTML !== "") return; 
+        let h=""; 
+        if(isComp) { 
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.75rem;">🔮塔罗区</span></div>`; 
+            for(let i=0; i<20; i++) h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 90px; height:130px; background:#4b0082; border:2px solid #555; border-radius:8px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:5px; left:5px; font-size:0.6rem; background:#000; border-radius:50%;">🔮</div></div>`; 
+            h += `<div style="flex:0 0 3px; background:#333; margin: 10px 5px;"></div>`; 
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.75rem;">📁档案区</span></div>`; 
+        } 
+        for(let i=0; i<40; i++) h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 90px; height:130px; background:#2a104a; border:2px solid #555; border-radius:8px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`; 
+        document.getElementById('deck').innerHTML = h; updateDeckVisibility(); 
+    }
+    
     function updateDeckVisibility() { for(let i=0; i<40; i++) { const c = document.getElementById(`card-${i}`); if(c) c.style.visibility = drawnCards.includes(i) ? 'hidden' : 'visible'; } if(isComp) for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; } }
     function handleDraw(i) { const users = players.filter(p=>!p.isComp); if(isComp || (users[turnIdx]||{}).nick !== myNick || cardIndex !== null || drawnCards.includes(i)) return; sendAll({type:'DRAW', idx:i, nick:myNick}); }
     function handleCompDraw(i) { if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return; compCardIndex = i; drawnCompCards.push(i); updateDeckVisibility(); showSpectrum(i); broadcastState(); }
@@ -222,44 +271,24 @@
         const img = document.getElementById('spectrum-img');
         const loader = document.getElementById('img-loader');
         const btn = document.getElementById('btn-cc-close');
-        
-        loader.style.display = 'block'; 
-        img.style.display = 'none';
-        btn.style.display = 'none';
-
+        loader.style.display = 'block'; img.style.display = 'none'; btn.style.display = 'none';
         img.src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
-        img.onload = () => {
-            loader.style.display = 'none';
-            img.style.display = 'block';
-            if(isComp) btn.style.display = 'block';
-        };
-        
-        board.style.display = 'flex'; 
-        setTimeout(() => board.classList.add('show'), 50); 
+        img.onload = () => { loader.style.display = 'none'; img.style.display = 'block'; if(isComp) btn.style.display = 'block'; };
+        board.style.display = 'flex'; setTimeout(() => board.classList.add('show'), 50); 
         document.getElementById('card-podium').style.display='block'; 
     }
 
     function hideSpectrum() { 
-        const board = document.getElementById('comp-card-board'); 
-        board.classList.remove('show'); 
-        setTimeout(() => { 
-            board.style.display = 'none'; 
-            if(cardIndex === null) document.getElementById('card-podium').style.display='none'; 
-        }, 500); 
+        const board = document.getElementById('comp-card-board'); board.classList.remove('show'); 
+        setTimeout(() => { board.style.display = 'none'; if(cardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); 
     }
 
     function showArchive(idx, nick) { 
         document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length]; 
         document.getElementById('card-podium').style.display='block'; 
-        const b = document.getElementById('focus-board'); 
-        b.style.display='flex'; 
-        setTimeout(()=>b.classList.add('show'), 50); 
-        document.getElementById('btn-like').disabled = (myNick === nick); 
-        document.getElementById('btn-dis').disabled = (myNick === nick); 
-        document.getElementById('btn-trans').disabled = (myNick !== nick); 
-        const btn = document.getElementById('btn-close'); 
-        btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; 
-        btn.disabled = (myNick !== nick); 
+        const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50); 
+        document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick); 
+        const btn = document.getElementById('btn-close'); btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; btn.disabled = (myNick !== nick); 
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
