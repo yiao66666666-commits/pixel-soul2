@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.17</title>
+    <title>SPEAK V49.18</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -110,7 +110,6 @@
 <div id="main-game">
     <div style="height:36px; background:var(--pink); color:#000; display:flex; align-items:center; padding:0 15px; font-weight:900; font-size:0.8rem;">
         <span>ROOM:</span><span id="room-id-val" style="margin-left:10px; background:#000; color:var(--gold); padding:2px 8px;">---</span>
-        
         <button id="btn-shuffle" class="ctrl-btn" style="display:none; height:24px; font-size:0.6rem; padding:0 8px; margin-left:auto; background:#111; border-color:var(--purple); color:var(--purple);" onclick="hostCmd('SHUFFLE_COMP')">🔄 洗牌</button>
     </div>
     
@@ -177,11 +176,14 @@
         "https://i.imgur.com/HOwrdcz.jpg", "https://i.imgur.com/pzRaHeV.jpg", "https://i.imgur.com/ZCUfN6b.jpg", "https://i.imgur.com/dc3q3ps.jpg"
     ];
 
-    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
-    let hostConn = null; 
+    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
+    let cardIndex = null, compCardIndex = null;
     let drawnCards = [], drawnCompCards = [];
-    let compCardIndex = null;
-    let syncTimeout = null;
+    let hostConn = null; 
+    
+    // 【核心修复一】设立动画计时器句柄，防止隐藏动画杀死新弹出的卡牌
+    let hideSpecTimer = null;
+    let hideArchTimer = null;
 
     const peerConfig = {
         config: {
@@ -237,7 +239,7 @@
         initNetwork();
     }
 
-    // 核心修复：精准状态下发，不再每秒狂轰滥炸
+    // 【核心修复三】温和而持续的状态广播，拯救掉线漏包的玩家
     function broadcastState() {
         if (!isComp) return;
         const state = {
@@ -260,6 +262,15 @@
             }
         });
 
+        peer.on('disconnected', () => {
+            console.log("信令断开，正在原生重连...");
+            if(document.getElementById('process-guide')) {
+                document.getElementById('process-guide').innerText = "信号重连中...";
+                document.getElementById('process-guide').style.color = "var(--pink)";
+            }
+            peer.reconnect();
+        });
+
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
@@ -267,9 +278,10 @@
                 document.getElementById('process-guide').style.color = "var(--gold)";
                 players = [{nick:myNick, isComp:true, peerId: id}]; 
                 renderUI();
-                broadcastState(); // 初始化广播一次
+                broadcastState(); 
+                // 心跳恢复：每2秒全场广播绝对状态，防止任何人掉队
+                setInterval(broadcastState, 2000); 
             } else { 
-                // 核心修复：重新开启 reliable，确保大同步包不丢失
                 hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
                 setupConn(hostConn); 
             }
@@ -282,7 +294,7 @@
                 if(isComp) {
                     players = players.filter(p => p.peerId !== c.peer);
                     renderUI();
-                    broadcastState(); // 有人退出，立刻广播新状态
+                    broadcastState();
                 }
             });
         });
@@ -303,7 +315,6 @@
             if(!isComp) {
                 document.getElementById('process-guide').innerText = "连接成功，读取数据中...";
                 document.getElementById('process-guide').style.color = "var(--blue)";
-                // 发送加入请求，等待房主回应
                 c.send({type:'JOIN', nick:myNick, peerId: peer.id});
             }
         });
@@ -313,28 +324,40 @@
                 if(!players.find(p=>p.peerId===d.peerId)) { 
                     players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
                     renderUI(); 
-                    broadcastState(); // 有新玩家加入，立刻全服广播
                 } 
+                broadcastState(); // 有人进，立刻广播
             }
             
             if(d.type==='SYNC') { 
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
-                
-                // 核心修复：即使没点开始，新玩家也能顺利解开遮罩看到 UI
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
                 const users = players.filter(p=>!p.isComp);
                 const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
                 
-                if(d.cardIndex !== null && cardIndex === null) { cardIndex = d.cardIndex; showArchive(d.cardIndex, targetNick); }
-                if(d.cardIndex === null && cardIndex !== null) { hideArchive(); cardIndex = null; }
+                // 更严谨的状态调和：防止卡牌状态错乱
+                if (d.compCardIndex !== compCardIndex) {
+                    if (d.compCardIndex !== null) {
+                        compCardIndex = d.compCardIndex;
+                        showSpectrum(compCardIndex);
+                    } else {
+                        compCardIndex = null;
+                        hideSpectrum();
+                    }
+                }
                 
-                if(d.compCardIndex !== null && compCardIndex === null) { compCardIndex = d.compCardIndex; showSpectrum(d.compCardIndex); }
-                if(d.compCardIndex === null && compCardIndex !== null) { hideSpectrum(); compCardIndex = null; }
+                if (d.cardIndex !== cardIndex) {
+                    if (d.cardIndex !== null) {
+                        cardIndex = d.cardIndex;
+                        showArchive(cardIndex, targetNick);
+                    } else {
+                        cardIndex = null;
+                        hideArchive();
+                    }
+                }
                 
                 renderUI(); updateGuide();
                 if(isLocked) updateDeckVisibility();
-                
                 if(d.allIds && localStream) d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); } });
             }
             
@@ -349,7 +372,8 @@
             }
             
             if(d.type==='CLOSE') { 
-                hideArchive(); cardIndex = null; 
+                cardIndex = null;
+                hideArchive(); 
                 if(isComp) { 
                     const users = players.filter(p=>!p.isComp); 
                     if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; 
@@ -368,12 +392,14 @@
             }
             
             if(d.type==='CLOSE_COMP') { 
-                hideSpectrum(); compCardIndex = null; 
+                compCardIndex = null;
+                hideSpectrum(); 
                 if(isComp) broadcastState(); 
             }
 
-            // 新增：塔罗牌洗牌同步
             if(d.type==='SHUFFLE_COMP') {
+                compCardIndex = null;
+                hideSpectrum();
                 drawnCompCards = [];
                 updateDeckVisibility();
                 if(isComp) broadcastState();
@@ -411,7 +437,7 @@
         broadcastState(); 
     }
 
-    // 新增：陪伴师专属洗牌命令
+    // 【核心修复二】洗牌时重置一切状态，拔除死锁
     function hostCmd(t) {
         if(!isComp) return;
         if(t==='CLOSE_COMP') { 
@@ -421,6 +447,8 @@
         }
         if(t==='SHUFFLE_COMP') {
             if(confirm("确定要将所有塔罗牌洗回牌库吗？")) {
+                compCardIndex = null; // 强行清除占用
+                hideSpectrum(); // 强行收回
                 drawnCompCards = [];
                 updateDeckVisibility();
                 sendAll({type:'SHUFFLE_COMP'});
@@ -484,7 +512,7 @@
     function handleDraw(i) {
         const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
         if(isComp || targetNick !== myNick || cardIndex !== null || drawnCards.includes(i)) return;
-        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick);
+        sendAll({type:'DRAW', idx:i, nick:myNick}); 
     }
 
     function handleCompDraw(i) {
@@ -496,7 +524,9 @@
         broadcastState(); 
     }
 
+    // 清道夫：打开塔罗时，清掉所有隐藏倒计时
     function showSpectrum(idx) {
+        if(hideSpecTimer) clearTimeout(hideSpecTimer);
         const board = document.getElementById('comp-card-board');
         document.getElementById('spectrum-img').src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
         board.style.display = 'flex';
@@ -508,7 +538,8 @@
     function hideSpectrum() {
         const board = document.getElementById('comp-card-board');
         board.classList.remove('show');
-        setTimeout(() => { 
+        if(hideSpecTimer) clearTimeout(hideSpecTimer);
+        hideSpecTimer = setTimeout(() => { 
             board.style.display = 'none'; 
             document.getElementById('btn-cc-close').style.display='none'; 
             if(cardIndex === null) {
@@ -517,7 +548,9 @@
         }, 800);
     }
 
+    // 清道夫：打开档案时，清掉所有隐藏倒计时
     function showArchive(idx, nick) {
+        if(hideArchTimer) clearTimeout(hideArchTimer);
         document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length];
         document.getElementById('card-podium').style.display='block';
         const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
@@ -533,10 +566,13 @@
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
+    
     function hideArchive() { 
-        document.getElementById('focus-board').classList.remove('show'); 
-        setTimeout(()=>{
-            document.getElementById('focus-board').style.display='none';
+        const board = document.getElementById('focus-board');
+        board.classList.remove('show'); 
+        if(hideArchTimer) clearTimeout(hideArchTimer);
+        hideArchTimer = setTimeout(()=>{
+            board.style.display='none';
             if(compCardIndex === null) {
                 document.getElementById('card-podium').style.display='none';
             }
