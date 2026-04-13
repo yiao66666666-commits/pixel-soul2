@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.15</title>
+    <title>SPEAK V49.16</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -238,11 +238,13 @@
             }
         });
 
-        // 修复：原生断线重连，替代暴力的 Watchdog
+        // 核心：使用原生温和重连，不引发服务器封锁
         peer.on('disconnected', () => {
-            console.log("PeerJS 失去连接，正在尝试重连...");
-            document.getElementById('process-guide').innerText = "信号不稳定，重连中...";
-            document.getElementById('process-guide').style.color = "var(--pink)";
+            console.log("信令服务器断开，自动重连...");
+            if(document.getElementById('process-guide')) {
+                document.getElementById('process-guide').innerText = "信号重连中...";
+                document.getElementById('process-guide').style.color = "var(--pink)";
+            }
             peer.reconnect();
         });
 
@@ -256,6 +258,7 @@
                     sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); 
                 }, 1000);
             } else { 
+                // 去除 reliable: true，防止数据流卡死
                 hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
                 setupConn(hostConn); 
             }
@@ -264,7 +267,6 @@
         peer.on('connection', (c) => { 
             conns.push(c); 
             setupConn(c); 
-            // 清理断开的幽灵玩家
             c.on('close', () => {
                 if(isComp) {
                     players = players.filter(p => p.peerId !== c.peer);
@@ -319,7 +321,7 @@
             }
             if(d.type==='UNLOCK') triggerUnlock();
             
-            // 核心修复：房主作为绝对的数据源处理所有 DRAW，杜绝状态冲突
+            // 房主统一仲裁卡牌状态，杜绝闪退和不可见
             if(d.type==='DRAW') { 
                 cardIndex = d.idx; 
                 if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); 
@@ -351,16 +353,17 @@
             if(!isComp) {
                 document.getElementById('process-guide').innerText = "与房主断开，尝试重连...";
                 document.getElementById('process-guide').style.color = "var(--pink)";
-                // 如果断开，重新建立数据通道
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
-                setupConn(hostConn);
+                // 温和的重连尝试，不无限狂发
+                setTimeout(() => {
+                    hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                    setupConn(hostConn);
+                }, 2000);
             }
         });
     }
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     
-    // 核心修复：每次发送前清理断掉的连接，防止拥堵
     function sendAll(d) { 
         if (isComp) { 
             conns = conns.filter(c => c.open);
@@ -424,16 +427,14 @@
         }
     }
 
-    // 核心修复：抽取时不本地直接展示，只发给房主处理，由房主盖章后统一广播，杜绝闪屏
     function handleDraw(i) {
         const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
         if(isComp || targetNick !== myNick || cardIndex !== null || drawnCards.includes(i)) return;
-        sendAll({type:'DRAW', idx:i, nick:myNick}); 
+        sendAll({type:'DRAW', idx:i, nick:myNick}); showArchive(i, myNick); 
     }
 
     function handleCompDraw(i) {
         if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return;
-        // 房主直接处理状态并广播
         compCardIndex = i;
         drawnCompCards.push(i);
         updateDeckVisibility();
