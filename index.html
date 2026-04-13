@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.19</title>
+    <title>SPEAK V49.20</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -46,13 +46,12 @@
         #comp-card-board {
             position: absolute; height: 68vh; max-width: 90vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
-            padding: 12px;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            padding: 12px; display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 6001; box-shadow: 15px 15px 0 rgba(163, 51, 255, 0.4);
             transform: translateY(-100%) scale(0.8); transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0;
         }
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
-        #spectrum-img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; } 
+        #spectrum-img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; background: #111; } 
 
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .ctrl-btn:disabled { opacity: 0.15; border-color: #444; }
@@ -83,13 +82,7 @@
     <input type="text" id="nick-in" class="pixel-input" placeholder="昵称">
     <input type="text" id="room-in" class="pixel-input" placeholder="房号">
     <button class="ctrl-btn" style="width:260px; height:60px; font-size:1.1rem; background:var(--pink); color:#fff; border-color:var(--pink);" onclick="entry('join')">进入游戏</button>
-    
     <button onclick="tryCompanion()" style="position:absolute; bottom:30px; right:30px; color:var(--purple); font-size:0.7rem; text-decoration:underline; background:none; border:none; outline:none; cursor:pointer;">陪伴师入口</button>
-    
-    <div style="position:absolute; bottom:30px; left:20px; display:flex; flex-direction:column; gap:5px;">
-        <button onclick="restore('nick')" style="color:#888; font-size:0.65rem; text-decoration:underline; background:none; text-align:left; border:none; cursor:pointer;">重填旧昵称</button>
-        <button onclick="restore('room')" style="color:#888; font-size:0.65rem; text-decoration:underline; background:none; text-align:left; border:none; cursor:pointer;">重填旧房号</button>
-    </div>
 </div>
 
 <div id="pwd-overlay" class="overlay">
@@ -113,7 +106,7 @@
         <button id="btn-shuffle" class="ctrl-btn" style="display:none; height:24px; font-size:0.6rem; padding:0 8px; margin-left:auto; background:#111; border-color:var(--purple); color:var(--purple);" onclick="hostCmd('SHUFFLE_COMP')">🔄 洗牌</button>
     </div>
     
-    <div id="process-guide" style="color:var(--blue);">寻找信号源，请耐心等待...</div>
+    <div id="process-guide" style="color:var(--blue);">寻找信号源，请稍候...</div>
     
     <div class="header-bar">
         <div id="player-area"></div>
@@ -121,28 +114,24 @@
     </div>
     <div class="stage">
         <div id="card-podium"></div>
-        
         <div id="focus-board">
             <div style="font-size:0.6rem; color:#999; letter-spacing:2px;">[ SENSITIVE FILE ]</div>
             <div id="q-text" style="font-size:1.15rem; font-weight:bold; text-align:center; padding:15px; line-height:1.4;">档案读取中...</div>
             <button id="btn-close" class="ctrl-btn" style="width:180px; transition:0.3s;" onclick="userCmd('CLOSE')">完成回答</button>
         </div>
-
         <div id="comp-card-board">
             <img id="spectrum-img" src="" alt="Spectrum Tarot">
+            <div id="img-loader" style="position:absolute; color:var(--purple); font-size:0.7rem; font-weight:bold; animation: pulse 1s infinite;">图像加速中...</div>
             <button id="btn-cc-close" class="ctrl-btn" style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); width:80%; max-width:200px; display:none; border-color:var(--purple); color:var(--gold); background:#000;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
         </div>
-
         <div id="deck" style="display:none; gap:12px; overflow-x:auto; padding:20px; width:100%;"></div>
     </div>
     <div class="footer">
         <div id="chat-flow"></div>
-        
         <div style="display:flex; padding:0 10px; gap:8px;">
             <input type="text" id="chat-input" style="flex:1; padding:10px; background:#111; border:2px solid #333; color:#fff; border-radius:6px; font-size:0.85rem;" placeholder="输入文字弹幕...">
             <button class="ctrl-btn" style="width:65px; padding:0;" onclick="sendTextChat()">发送</button>
         </div>
-
         <div class="btn-panel">
             <button id="btn-like" class="ctrl-btn" disabled onclick="actionReact('👍')">点赞</button>
             <button id="btn-dis" class="ctrl-btn" disabled style="border-color:#444;" onclick="actionReact('❌')">异议</button>
@@ -156,45 +145,24 @@
 <div id="audio-bridge" style="display:none;"></div>
 
 <script>
-    const CUSTOM_QS = [
-        "你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？为什么？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？",
-        "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？", "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？（1-10分）为什么？",
-        "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作/这个行业真的把你“榨干”了？", "谁发来的微信消息或工作群艾特，会让你一看到就瞬间心跳加速、感到生理性不适？为什么？", "你人生中，哪一天是你打死都不想再经历第二次的？",
-        "如果明天公司突然倒闭了，你心里的第一反应是恐慌，还是长舒一口气？", "如果现在给你一个机会，把工资减半，但每天能准时 5 点下班且绝对没人找你，你会立刻答应，还是犹豫？", "假如现在有个按钮，按下去能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果今天能用你的一年寿命，换取一件你曾经极其渴望但没得到的东西，你会换什么？",
-        "如果给你一千万，条件是立刻和父母和爱人孩子彻底绝交，你换吗？", "如果今晚睡着后，你会进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母曾经骂过你的话，你当时很不屑，现在却悲哀地发现自己真的变成了那样？",
-        "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？身边坐着谁？", "如果你有一件“隐身衣”你想利用它去做什么？", "分享一个你的“童年阴影”可以是电影片段，或者生活打击。", "哪一首歌的旋律一响，你的脑子里就会立刻无条件地弹出一个人？",
-        "此时此刻，如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个本来跟你毫无血缘关系的人，曾给过你一种像“亲人”一样的感觉？", "如果人的寿命可以像微信转账一样转给别人，你会把你的一年寿命转给谁？", "如果有一个快进按键，能直接跳过你现在正在熬的这段日子，代价是减寿三年，你会按吗？",
-        "假设你能以上帝视角参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果现在给你一个“合法报复一次”的额度，且绝对不用承担任何后果，你会立刻用在谁身上？", "假设你明天必须彻底离开现在的城市，永远不再回来，走之前你只想最后去见一个人，你会见谁？", "如果你死后，你的手机数据会被毫无保留地公开展示，你最怕被谁看到里面的哪一部分？",
-        "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
-    ];
+    const CUSTOM_QS = ["你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？为什么？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？", "如果你的生命只剩最后 24 小时，你会去见谁？对ta说什么？", "谁曾经对你特别好，但后来你们却莫名其妙地断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？", "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作真的把你“榨干”了？", "谁的消息会让你看到就瞬间心跳加速、感到生理不适？", "你人生中，哪一天是你打死都不想再经历第二次的？", "如果明天公司突然倒闭了，你心里的第一反应是恐慌还是长舒一口气？", "给你一个机会工资减半但每天准时下班且没人找你，你会立刻答应吗？", "假如有个按钮能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果用一年寿命换取一件极其渴望但没得到的东西，你会换什么？", "给你一千万条件是立刻和父母爱人彻底绝交，你换吗？", "如果你进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母骂过你的话，你当时很不屑现在却发现自己变成了那样？", "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？", "如果你有一件“隐身衣”你想利用它去做什么？", "分享一个你的“童年阴影”可以是电影片段或生活打击。", "哪一首歌旋律一响，你的脑子里就会无条件弹出一个人？", "如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个毫无血缘关系的人，曾给你一种像“亲人”一样的感觉？", "如果寿命可以像微信转账一样转给别人，你会转给谁？", "如果有一个快进键跳过现在的苦难但代价是减寿三年，你会按吗？", "假设你能参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果给你一个“合法报复一次”的额度，你会立刻用在谁身上？", "假设你明天必须彻底离开，走之前你只想最后去见一个人，是谁？", "如果你死后手机数据会被公开，你最怕被谁看到里面的哪部分？", "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念却再也找不到的一种“感觉”是什么？"];
 
-    const COMP_CARD_URLS = [
-        "https://i.imgur.com/pmz4pCX.jpg", "https://i.imgur.com/LEyyi4h.jpg", "https://i.imgur.com/CmDDeCW.jpg", "https://i.imgur.com/rsxQQtg.jpg",
-        "https://i.imgur.com/w1NvgiY.jpg", "https://i.imgur.com/LcwrSm7.jpg", "https://i.imgur.com/FCVXQIF.jpg", "https://i.imgur.com/W5n0Scs.jpg",
-        "https://i.imgur.com/BvZ7nkK.jpg", "https://i.imgur.com/3cKDRAY.jpg", "https://i.imgur.com/oJoVo7m.jpg", "https://i.imgur.com/ICtUPF0.jpg",
-        "https://i.imgur.com/SDmjTLT.jpg", "https://i.imgur.com/wjJdtHa.jpg", "https://i.imgur.com/G3nzMEW.jpg", "https://i.imgur.com/0QP8FPZ.jpg",
-        "https://i.imgur.com/HOwrdcz.jpg", "https://i.imgur.com/pzRaHeV.jpg", "https://i.imgur.com/ZCUfN6b.jpg", "https://i.imgur.com/dc3q3ps.jpg"
+    // 【核心加速：集成镜像代理，彻底解决手机端 Imgur 图片被墙问题】
+    const IMG_PROXY = "https://wsrv.nl/?url=";
+    const RAW_URLS = [
+        "i.imgur.com/pmz4pCX.jpg", "i.imgur.com/LEyyi4h.jpg", "i.imgur.com/CmDDeCW.jpg", "i.imgur.com/rsxQQtg.jpg",
+        "i.imgur.com/w1NvgiY.jpg", "i.imgur.com/LcwrSm7.jpg", "i.imgur.com/FCVXQIF.jpg", "i.imgur.com/W5n0Scs.jpg",
+        "i.imgur.com/BvZ7nkK.jpg", "i.imgur.com/3cKDRAY.jpg", "i.imgur.com/oJoVo7m.jpg", "i.imgur.com/ICtUPF0.jpg",
+        "i.imgur.com/SDmjTLT.jpg", "i.imgur.com/wjJdtHa.jpg", "i.imgur.com/G3nzMEW.jpg", "i.imgur.com/0QP8FPZ.jpg",
+        "i.imgur.com/HOwrdcz.jpg", "i.imgur.com/pzRaHeV.jpg", "i.imgur.com/ZCUfN6b.jpg", "i.imgur.com/dc3q3ps.jpg"
     ];
+    const COMP_CARD_URLS = RAW_URLS.map(url => IMG_PROXY + url);
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
-    let cardIndex = null, compCardIndex = null;
-    let drawnCards = [], drawnCompCards = [];
-    let hostConn = null; 
-    let hideSpecTimer = null, hideArchTimer = null;
-    
-    // 【核心修复：状态标识与雷达计时器】
-    let hasInitialConnection = false;
-    let lastSyncTime = Date.now();
+    let cardIndex = null, compCardIndex = null, drawnCards = [], drawnCompCards = [], hostConn = null; 
+    let hideSpecTimer = null, hideArchTimer = null, hasInitialConnection = false, lastSyncTime = Date.now();
 
-    const peerConfig = {
-        config: {
-            'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478' },
-                { urls: 'stun:stun.cloudflare.com:3478' }
-            ]
-        }
-    };
+    const peerConfig = { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] } };
 
     function tryCompanion() {
         if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("请先填写昵称和房号");
@@ -203,16 +171,11 @@
     }
 
     function checkPwd() {
-        if(document.getElementById('comp-pwd-in').value === '101010') {
-            document.getElementById('pwd-overlay').style.display = 'none';
-            entry('companion');
-        } else { alert("密码错误"); }
+        if(document.getElementById('comp-pwd-in').value === '101010') { document.getElementById('pwd-overlay').style.display = 'none'; entry('companion'); } 
+        else { alert("密码错误"); }
     }
 
-    function restore(t) { 
-        if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || "";
-        if(t==='room') document.getElementById('room-in').value = localStorage.getItem('sr') || "";
-    }
+    function restore(t) { if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || ""; if(t==='room') document.getElementById('room-in').value = localStorage.getItem('sr') || ""; }
 
     function entry(m) {
         myNick = document.getElementById('nick-in').value; myRoom = document.getElementById('room-in').value;
@@ -221,275 +184,85 @@
         localStorage.setItem('sn', myNick); localStorage.setItem('sr', myRoom);
         document.getElementById('login-screen').style.display='none';
         document.getElementById('main-game').style.display='flex';
-        
-        if(isComp) {
-            document.getElementById('host-start-btn').style.display='block';
-            document.getElementById('btn-shuffle').style.display='block';
-        }
+        if(isComp) { document.getElementById('host-start-btn').style.display='block'; document.getElementById('btn-shuffle').style.display='block'; }
         document.getElementById('audio-overlay').style.display='flex';
     }
 
     async function unlockAudio() {
-        try { 
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
-            localStream.getAudioTracks()[0].enabled = false; 
-        } catch(e) {
-            alert("⚠️ 麦克风权限获取失败，将强行以无声模式进入");
-        }
+        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) { alert("⚠️ 麦克风受限，将以静音模式运行"); }
         document.getElementById('audio-overlay').style.display='none';
         initNetwork();
     }
 
     function broadcastState() {
         if (!isComp) return;
-        const state = {
-            type: 'SYNC',
-            list: players, turnIdx: turnIdx, isLocked: isLocked, 
-            cardIndex: cardIndex, compCardIndex: compCardIndex, 
-            drawnCards: drawnCards, drawnCompCards: drawnCompCards, 
-            allIds: players.map(p=>p.peerId)
-        };
-        sendAll(state);
+        sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId) });
     }
 
     function initNetwork() {
         peer = new Peer(isComp ? `SPEAK-${myRoom}` : null, peerConfig);
-        
-        peer.on('error', (err) => {
-            if (err.type === 'unavailable-id' && isComp) {
-                alert("进入失败：该房间已经有一位陪伴师了！");
-                location.reload();
-            }
-            // 忽略普通的 peer-unavailable，交给下面的雷达循环去处理
-        });
-
-        peer.on('disconnected', () => {
-            console.log("信令断开，正在原生重连...");
-            peer.reconnect();
-        });
-
+        peer.on('error', (err) => { if (err.type === 'unavailable-id' && isComp) { alert("房间已有陪伴师！"); location.reload(); } });
+        peer.on('disconnected', () => peer.reconnect());
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
-                document.getElementById('process-guide').innerText = "等待玩家入场...";
-                document.getElementById('process-guide').style.color = "var(--gold)";
-                players = [{nick:myNick, isComp:true, peerId: id}]; 
-                renderUI();
-                broadcastState(); 
-                setInterval(broadcastState, 2000); 
+                players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
+                broadcastState(); setInterval(broadcastState, 2000); 
             } else { 
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); 
-                setupConn(hostConn); 
-                
-                // 【核心修复：主动雷达扫房与防断线死锁】
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); 
                 setInterval(() => {
-                    if (!hasInitialConnection) {
-                        document.getElementById('process-guide').innerText = "寻找房间中，请稍候...";
-                        document.getElementById('process-guide').style.color = "var(--pink)";
-                        if(hostConn) hostConn.close();
-                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true});
-                        setupConn(hostConn);
-                    } else if (Date.now() - lastSyncTime > 8000) {
-                        hasInitialConnection = false;
-                        document.getElementById('process-guide').innerText = "与房间失去同步，重连中...";
-                        document.getElementById('process-guide').style.color = "var(--pink)";
-                        if(hostConn) hostConn.close();
+                    if (!hasInitialConnection || (Date.now() - lastSyncTime > 10000)) {
+                        hasInitialConnection = false; if(hostConn) hostConn.close();
+                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn);
                     }
-                }, 3000);
+                }, 4000);
             }
         });
-        
-        peer.on('connection', (c) => { 
-            conns.push(c); 
-            setupConn(c); 
-            c.on('close', () => {
-                if(isComp) {
-                    players = players.filter(p => p.peerId !== c.peer);
-                    renderUI();
-                    broadcastState();
-                }
-            });
-        });
-        
-        peer.on('call', (call) => {
-            handledIds.add(call.peer);
-            if(localStream) call.answer(localStream); else call.answer();
-            call.on('stream', (s) => {
-                let el = document.getElementById(`audio-${call.peer}`);
-                if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); }
-                el.srcObject = s; el.play().catch(e => console.log("iOS Autoplay blocked"));
-            });
-        });
+        peer.on('connection', (c) => { conns.push(c); setupConn(c); c.on('close', () => { if(isComp) { players = players.filter(p => p.peerId !== c.peer); renderUI(); broadcastState(); } }); });
+        peer.on('call', (call) => { handledIds.add(call.peer); call.answer(localStream || null); call.on('stream', (s) => { let el = document.getElementById(`audio-${call.peer}`); if(!el) { el = document.createElement('audio'); el.id = `audio-${call.peer}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); } el.srcObject = s; }); });
     }
 
     function setupConn(c) {
-        c.on('open', () => {
-            if(!isComp) {
-                hasInitialConnection = true;
-                lastSyncTime = Date.now();
-                document.getElementById('process-guide').innerText = "连接成功，读取数据中...";
-                document.getElementById('process-guide').style.color = "var(--blue)";
-                c.send({type:'JOIN', nick:myNick, peerId: peer.id});
-            }
-        });
-        
+        c.on('open', () => { if(!isComp) { hasInitialConnection = true; lastSyncTime = Date.now(); c.send({type:'JOIN', nick:myNick, peerId: peer.id}); } });
         c.on('data', (d) => {
-            if(d.type==='JOIN' && isComp) { 
-                if(!players.find(p=>p.peerId===d.peerId)) { 
-                    players.push({nick:d.nick, isComp:false, peerId: d.peerId}); 
-                    renderUI(); 
-                } 
-                broadcastState(); 
-            }
-            
+            if(d.type==='JOIN' && isComp) { if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); } broadcastState(); }
             if(d.type==='SYNC') { 
-                if(!isComp) {
-                    hasInitialConnection = true;
-                    lastSyncTime = Date.now();
-                }
-                
+                if(!isComp) { hasInitialConnection = true; lastSyncTime = Date.now(); }
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
-                
-                const users = players.filter(p=>!p.isComp);
-                const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
-                
-                if (d.compCardIndex !== compCardIndex) {
-                    if (d.compCardIndex !== null) {
-                        compCardIndex = d.compCardIndex;
-                        showSpectrum(compCardIndex);
-                    } else {
-                        compCardIndex = null;
-                        hideSpectrum();
-                    }
-                }
-                
-                if (d.cardIndex !== cardIndex) {
-                    if (d.cardIndex !== null) {
-                        cardIndex = d.cardIndex;
-                        showArchive(cardIndex, targetNick);
-                    } else {
-                        cardIndex = null;
-                        hideArchive();
-                    }
-                }
-                
-                renderUI(); updateGuide();
-                if(isLocked) updateDeckVisibility();
+                if (d.compCardIndex !== compCardIndex) { if (d.compCardIndex !== null) { compCardIndex = d.compCardIndex; showSpectrum(compCardIndex); } else { compCardIndex = null; hideSpectrum(); } }
+                if (d.cardIndex !== cardIndex) { if (d.cardIndex !== null) { cardIndex = d.cardIndex; showArchive(cardIndex, (players.filter(p=>!p.isComp)[turnIdx]||{}).nick); } else { cardIndex = null; hideArchive(); } }
+                renderUI(); updateGuide(); if(isLocked) updateDeckVisibility();
                 if(d.allIds && localStream) d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) handledIds.add(id); } });
             }
-            
             if(d.type==='UNLOCK') triggerUnlock();
-            
-            if(d.type==='DRAW') { 
-                cardIndex = d.idx; 
-                if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); 
-                updateDeckVisibility(); 
-                showArchive(d.idx, d.nick); 
-                if(isComp) broadcastState(); 
-            }
-            
-            if(d.type==='CLOSE') { 
-                cardIndex = null;
-                hideArchive(); 
-                if(isComp) { 
-                    const users = players.filter(p=>!p.isComp); 
-                    if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; 
-                    broadcastState(); 
-                } 
-            }
-            
+            if(d.type==='DRAW') { cardIndex = d.idx; if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); updateDeckVisibility(); showArchive(d.idx, d.nick); if(isComp) broadcastState(); }
+            if(d.type==='CLOSE') { cardIndex = null; hideArchive(); if(isComp) { const users = players.filter(p=>!p.isComp); if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; broadcastState(); } }
             if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); } if(isComp) sendAll(d); }
-            
-            if(d.type==='DRAW_COMP') { 
-                compCardIndex = d.idx; 
-                if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); 
-                updateDeckVisibility(); 
-                showSpectrum(d.idx); 
-                if(isComp) broadcastState(); 
-            }
-            
-            if(d.type==='CLOSE_COMP') { 
-                compCardIndex = null;
-                hideSpectrum(); 
-                if(isComp) broadcastState(); 
-            }
-
-            if(d.type==='SHUFFLE_COMP') {
-                compCardIndex = null;
-                hideSpectrum();
-                drawnCompCards = [];
-                updateDeckVisibility();
-                if(isComp) broadcastState();
-            }
+            if(d.type==='DRAW_COMP') { compCardIndex = d.idx; if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); updateDeckVisibility(); showSpectrum(d.idx); if(isComp) broadcastState(); }
+            if(d.type==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); if(isComp) broadcastState(); }
+            if(d.type==='SHUFFLE_COMP') { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); if(isComp) broadcastState(); }
         });
-        
-        c.on('close', () => {
-            if(!isComp) {
-                hasInitialConnection = false;
-            }
-        });
+        c.on('close', () => { if(!isComp) hasInitialConnection = false; });
     }
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
-    
-    function sendAll(d) { 
-        if (isComp) { 
-            conns = conns.filter(c => c.open);
-            conns.forEach(c => c.send(d)); 
-        } else { 
-            if (hostConn && hostConn.open) hostConn.send(d); 
-        } 
-    }
-    
-    function hostGo() { 
-        document.getElementById('host-start-btn').style.display='none'; 
-        isLocked = true;
-        triggerUnlock(); 
-        sendAll({type:'UNLOCK'}); 
-        broadcastState(); 
-    }
-
+    function sendAll(d) { if (isComp) { conns = conns.filter(c => c.open); conns.forEach(c => c.send(d)); } else { if (hostConn && hostConn.open) hostConn.send(d); } }
+    function hostGo() { document.getElementById('host-start-btn').style.display='none'; isLocked = true; triggerUnlock(); sendAll({type:'UNLOCK'}); broadcastState(); }
     function hostCmd(t) {
         if(!isComp) return;
-        if(t==='CLOSE_COMP') { 
-            compCardIndex = null;
-            hideSpectrum(); 
-            broadcastState(); 
-        }
-        if(t==='SHUFFLE_COMP') {
-            if(confirm("确定要将所有塔罗牌洗回牌库吗？")) {
-                compCardIndex = null; 
-                hideSpectrum(); 
-                drawnCompCards = [];
-                updateDeckVisibility();
-                sendAll({type:'SHUFFLE_COMP'});
-                broadcastState();
-            }
-        }
+        if(t==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); broadcastState(); }
+        if(t==='SHUFFLE_COMP' && confirm("洗牌所有塔罗？")) { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); sendAll({type:'SHUFFLE_COMP'}); broadcastState(); }
     }
 
-    function updateGuide() {
-        const guide = document.getElementById('process-guide');
-        guide.style.color = "var(--gold)"; 
-        if(!isLocked) { guide.innerText = "等待房主开启..."; return; }
-        const users = players.filter(p=>!p.isComp);
-        const targetNick = users[turnIdx] ? users[turnIdx].nick : '---';
-        if(cardIndex !== null) guide.innerText = `[ ${targetNick} ] 正在坦白，请全员评价...`;
-        else guide.innerText = `轮到 [ ${targetNick} ] 开启档案...`;
-    }
+    function updateGuide() { const g = document.getElementById('process-guide'); g.style.color = "var(--gold)"; if(!isLocked) { g.innerText = "等待陪伴师开启审判..."; return; } const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : '---'; g.innerText = cardIndex !== null ? `[ ${targetNick} ] 正在坦白...` : `轮到 [ ${targetNick} ] 开启档案...`; }
 
     function renderUI() {
-        const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area');
-        pA.innerHTML = ""; cA.innerHTML = "";
-        const users = players.filter(p=>!p.isComp);
-        const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
+        const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area'); pA.innerHTML = ""; cA.innerHTML = "";
+        const targetNick = (players.filter(p=>!p.isComp)[turnIdx]||{}).nick;
         players.forEach(p => {
             const isTurn = (!p.isComp && p.nick === targetNick);
-            const h = `<div class="p-item online ${isTurn?'active-turn':''}">
-                <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div>
-                <div style="font-size:0.55rem;margin-top:5px;color:#aaa;text-align:center;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nick}</div>
-            </div>`;
+            const h = `<div class="p-item online ${isTurn?'active-turn':''}"> <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div> <div style="font-size:0.55rem;margin-top:5px;color:#aaa;text-align:center;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nick}</div> </div>`;
             if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h;
         });
     }
@@ -497,49 +270,34 @@
     function renderDeck() {
         if(document.getElementById('deck').innerHTML !== "") return;
         let h=""; 
-        
         if(isComp) {
-            h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">🔮塔罗区</span></div>`;
-            for(let i=0; i<20; i++) {
-                h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
-            }
-            h += `<div style="flex:0 0 4px; background:#333; margin: 10px 10px; border-radius:2px;"></div>`;
-            h += `<div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.9rem; letter-spacing:4px; text-shadow: 2px 2px 0 #000;">📁档案区</span></div>`;
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:var(--purple); font-weight:900; font-size:0.9rem; letter-spacing:4px;">🔮塔罗区</span></div>`;
+            for(let i=0; i<20; i++) h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; background:#000; border-radius:50%; padding:2px;">🔮</div></div>`;
+            h += `<div style="flex:0 0 4px; background:#333; margin: 10px 10px;"></div>`;
+            h += `<div style="flex:0 0 auto; display:flex; align-items:center; padding: 0 5px;"><span style="writing-mode: vertical-lr; color:#666; font-weight:900; font-size:0.9rem; letter-spacing:4px;">📁档案区</span></div>`;
         }
-
-        for(let i=0; i<40; i++) {
-            h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`;
-        }
-        document.getElementById('deck').innerHTML = h;
-        updateDeckVisibility();
+        for(let i=0; i<40; i++) h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`;
+        document.getElementById('deck').innerHTML = h; updateDeckVisibility();
     }
 
     function updateDeckVisibility() {
         for(let i=0; i<40; i++) { const c = document.getElementById(`card-${i}`); if(c) c.style.visibility = drawnCards.includes(i) ? 'hidden' : 'visible'; }
-        if(isComp) {
-            for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; }
-        }
+        if(isComp) for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; }
     }
 
-    function handleDraw(i) {
-        const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : null;
-        if(isComp || targetNick !== myNick || cardIndex !== null || drawnCards.includes(i)) return;
-        sendAll({type:'DRAW', idx:i, nick:myNick}); 
-    }
-
-    function handleCompDraw(i) {
-        if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return;
-        compCardIndex = i;
-        drawnCompCards.push(i);
-        updateDeckVisibility();
-        showSpectrum(i);
-        broadcastState(); 
-    }
+    function handleDraw(i) { const users = players.filter(p=>!p.isComp); if(isComp || (users[turnIdx]||{}).nick !== myNick || cardIndex !== null || drawnCards.includes(i)) return; sendAll({type:'DRAW', idx:i, nick:myNick}); }
+    function handleCompDraw(i) { if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return; compCardIndex = i; drawnCompCards.push(i); updateDeckVisibility(); showSpectrum(i); broadcastState(); }
 
     function showSpectrum(idx) {
         if(hideSpecTimer) clearTimeout(hideSpecTimer);
         const board = document.getElementById('comp-card-board');
-        document.getElementById('spectrum-img').src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
+        const img = document.getElementById('spectrum-img');
+        const loader = document.getElementById('img-loader');
+        
+        loader.style.display = 'block';
+        img.src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
+        img.onload = () => loader.style.display = 'none'; // 图片加载完后隐藏提示
+        
         board.style.display = 'flex';
         setTimeout(() => board.classList.add('show'), 50);
         document.getElementById('card-podium').style.display='block';
@@ -550,13 +308,7 @@
         const board = document.getElementById('comp-card-board');
         board.classList.remove('show');
         if(hideSpecTimer) clearTimeout(hideSpecTimer);
-        hideSpecTimer = setTimeout(() => { 
-            board.style.display = 'none'; 
-            document.getElementById('btn-cc-close').style.display='none'; 
-            if(cardIndex === null) {
-                document.getElementById('card-podium').style.display='none'; 
-            }
-        }, 800);
+        hideSpecTimer = setTimeout(() => { board.style.display = 'none'; document.getElementById('btn-cc-close').style.display='none'; if(cardIndex === null) document.getElementById('card-podium').style.display='none'; }, 800);
     }
 
     function showArchive(idx, nick) {
@@ -564,34 +316,18 @@
         document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length];
         document.getElementById('card-podium').style.display='block';
         const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50);
-        
-        document.getElementById('btn-like').disabled = (myNick === nick);
-        document.getElementById('btn-dis').disabled = (myNick === nick);
-        document.getElementById('btn-trans').disabled = (myNick !== nick);
-        
-        const btnClose = document.getElementById('btn-close');
-        btnClose.style.display = 'block'; 
-        if(myNick === nick) { btnClose.disabled = false; btnClose.innerText = "完成回答"; btnClose.style.color = "var(--gold)"; btnClose.style.borderColor = "var(--gold)"; btnClose.style.background = "#000"; } 
-        else { btnClose.disabled = true; btnClose.innerText = "等待发言..."; btnClose.style.color = "#666"; btnClose.style.borderColor = "#444"; btnClose.style.background = "#111"; }
+        document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick);
+        const btn = document.getElementById('btn-close'); btn.style.display = 'block'; 
+        if(myNick === nick) { btn.disabled = false; btn.innerText = "完成回答"; btn.style.color = "var(--gold)"; } 
+        else { btn.disabled = true; btn.innerText = "等待发言..."; btn.style.color = "#666"; }
     }
 
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
-    
-    function hideArchive() { 
-        const board = document.getElementById('focus-board');
-        board.classList.remove('show'); 
-        if(hideArchTimer) clearTimeout(hideArchTimer);
-        hideArchTimer = setTimeout(()=>{
-            board.style.display='none';
-            if(compCardIndex === null) {
-                document.getElementById('card-podium').style.display='none';
-            }
-        }, 800); 
-    }
+    function hideArchive() { const b = document.getElementById('focus-board'); b.classList.remove('show'); if(hideArchTimer) clearTimeout(hideArchTimer); hideArchTimer = setTimeout(()=>{ b.style.display='none'; if(compCardIndex === null) document.getElementById('card-podium').style.display='none'; }, 800); }
     
     function actionReact(e) { appendChat(myNick, e); triggerAnim(e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
     function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; }
-    function triggerAnim(e) { for(let i=0; i<10; i++) { const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='40%'; p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); document.body.appendChild(p); setTimeout(()=>p.remove(), 800); } }
+    function triggerAnim(e) { for(let i=0; i<8; i++) { const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='40%'; p.style.setProperty('--dx',(Math.random()*400-200)+'px'); p.style.setProperty('--dy',(Math.random()*-400-50)+'px'); document.body.appendChild(p); setTimeout(()=>p.remove(), 800); } }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     function toggleMic() { if(!localStream) return; const a = localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('mic-btn').classList.toggle('active', a); }
 </script>
