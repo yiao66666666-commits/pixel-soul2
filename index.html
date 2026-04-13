@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.7</title>
+    <title>SPEAK V49.8</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -43,6 +43,7 @@
         }
         #focus-board.show { display: flex; transform: translateY(0) rotateX(0deg); opacity: 1; }
 
+        /* 陪伴师塔罗图像板 - 移除 Canvas，改为图片容器 */
         #comp-card-board {
             position: absolute; height: 65vh; max-width: 85vw; aspect-ratio: 13 / 16;
             background: #000; border: 4px solid var(--purple); border-radius: 24px;
@@ -52,7 +53,7 @@
             overflow: hidden;
         }
         #comp-card-board.show { display: flex; transform: translateY(0) scale(1); opacity: 1; }
-        #spectrum-canvas { width: 100%; height: 100%; object-fit: fill; }
+        #spectrum-img { width: 100%; height: 100%; object-fit: cover; } /* 图片自适应铺满 */
 
         .ctrl-btn { height: 50px; border: 4px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .ctrl-btn:disabled { opacity: 0.15; border-color: #444; }
@@ -124,7 +125,7 @@
         </div>
 
         <div id="comp-card-board">
-            <canvas id="spectrum-canvas" width="320" height="400"></canvas>
+            <img id="spectrum-img" src="" alt="Spectrum Tarot">
             <button id="btn-cc-close" class="ctrl-btn" style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); width:80%; max-width:200px; display:none; border-color:var(--purple); color:var(--gold); background:#000;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
         </div>
 
@@ -163,33 +164,38 @@
         "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念，却再也找不到的一种“感觉”是什么？"
     ];
 
-    const COMP_CARDS = [
-        {t:"THE SPARK", d:"ACTION - 星火", g:"谁来点燃静默？", c1:"#3a0000", c2:"#ff0055", ic:"🔥"},
-        {t:"THE CROWN", d:"VOICE - 冕", g:"请把麦克风交给戴皇冠的人", c1:"#1a0a2a", c2:"#ffcc00", ic:"👑"},
-        {t:"THE TOWER", d:"ACTION - 崩塌", g:"让那些防备的塔崩塌。坦白吧。", c1:"#222222", c2:"#880000", ic:"🗼"},
-        {t:"THE CHARIOT", d:"ACTION - 战车", g:"向下一个档案，极速冲刺！", c1:"#002233", c2:"#00f2ff", ic:"🚀"},
-        {t:"THE ECHO", d:"VOICE - 回声", g:"先让它在你们的灵魂里震动", c1:"#001111", c2:"#00ff66", ic:"📢"},
-        {t:"THE TEAR", d:"EMOTION - 泪", g:"别抗拒，它是通往真实的隧道", c1:"#000022", c2:"#0066ff", ic:"💧"},
-        {t:"THE MIRROR", d:"EMOTION - 双生镜", g:"你看见的是他，还是另一个自己？", c1:"#2a002a", c2:"#ff00ff", ic:"🪞"},
-        {t:"THE EMBRACE", d:"EMOTION - 拥抱", g:"在这个频段里，你是安全的", c1:"#331100", c2:"#ff6600", ic:"🫂"},
-        {t:"THE OCEAN", d:"EMOTION - 深海", g:"顺着这股混乱沉下去", c1:"#00001a", c2:"#000088", ic:"🌊"},
-        {t:"THE FOUNTAIN", d:"EMOTION - 源泉", g:"痛苦过后，治愈正在涌出", c1:"#002222", c2:"#00ffff", ic:"⛲"},
-        {t:"THE SWORD", d:"THOUGHT - 真理剑", g:"刺破迷雾，给出一个粗糙的真相", c1:"#111111", c2:"#dddddd", ic:"⚔️"},
-        {t:"THE THREAD", d:"THOUGHT - 命运线", g:"那个阴影，如何连结到焦虑的？", c1:"#220000", c2:"#ff0000", ic:"🧵"},
-        {t:"THE STORM", d:"THOUGHT - 风暴", g:"混乱中，找到绝对冷静的那个点", c1:"#1a1a2e", c2:"#4a4e69", ic:"🌪️"},
-        {t:"THE GATE", d:"THOUGHT - 门扉", g:"把这扇你亲手加上锁的门打开吗？", c1:"#222222", c2:"#ffcc00", ic:"🚪"},
-        {t:"THE VORTEX", d:"THOUGHT - 回旋", g:"再深入一点，去触摸那个核心", c1:"#1a0033", c2:"#6600cc", ic:"🌀"},
-        {t:"THE MASK", d:"TRUTH - 面具", g:"摘下面具。告诉我，那个你有多累？", c1:"#33001a", c2:"#ff00aa", ic:"🎭"},
-        {t:"THE CLOCK", d:"TRUTH - 时钟", g:"这最后24小时，你想对自己说什么？", c1:"#221100", c2:"#ff8800", ic:"🕰️"},
-        {t:"THE GOLD", d:"TRUTH - 金块", g:"这个代价，你的灵魂真的能承受吗？", c1:"#332200", c2:"#ffcc00", ic:"🪙"},
-        {t:"THE VOID", d:"TRUTH - 虚空", g:"你希望这个光点梦见什么？", c1:"#000000", c2:"#111111", ic:"🌌"},
-        {t:"THE WORLD", d:"TRUTH - 重塑", g:"审判结束。灵魂已重塑。欢迎回来。", c1:"#001a00", c2:"#00ff00", ic:"🌍"}
+    // ==========================================
+    // 🎨 这里是你未来填入 AI 图像链接的地方！
+    // 一共 20 张，按顺序对应 01 到 20。
+    // ==========================================
+    const COMP_CARD_URLS = [
+        "https://via.placeholder.com/600x800/220022/ff0055?text=THE+SPARK",  // 01 星火
+        "https://via.placeholder.com/600x800/110022/ffcc00?text=THE+CROWN",  // 02 冕
+        "https://via.placeholder.com/600x800/111111/ff0000?text=THE+TOWER",  // 03 崩塌
+        "https://via.placeholder.com/600x800/001122/00ffff?text=THE+CHARIOT",// 04 战车
+        "https://via.placeholder.com/600x800/001100/00ff00?text=THE+ECHO",   // 05 回声
+        "https://via.placeholder.com/600x800/000022/0066ff?text=THE+TEAR",   // 06 泪
+        "https://via.placeholder.com/600x800/220022/ff00ff?text=THE+MIRROR", // 07 双生镜
+        "https://via.placeholder.com/600x800/331100/ff6600?text=THE+EMBRACE",// 08 拥抱
+        "https://via.placeholder.com/600x800/00001a/000088?text=THE+OCEAN",  // 09 深海
+        "https://via.placeholder.com/600x800/002222/00ffff?text=THE+FOUNTAIN",// 10 源泉
+        "https://via.placeholder.com/600x800/111111/dddddd?text=THE+SWORD",  // 11 真理剑
+        "https://via.placeholder.com/600x800/220000/ff0000?text=THE+THREAD", // 12 命运线
+        "https://via.placeholder.com/600x800/1a1a2e/4a4e69?text=THE+STORM",  // 13 风暴
+        "https://via.placeholder.com/600x800/222222/ffcc00?text=THE+GATE",   // 14 门扉
+        "https://via.placeholder.com/600x800/1a0033/6600cc?text=THE+VORTEX", // 15 回旋
+        "https://via.placeholder.com/600x800/33001a/ff00aa?text=THE+MASK",   // 16 面具
+        "https://via.placeholder.com/600x800/221100/ff8800?text=THE+CLOCK",  // 17 时钟
+        "https://via.placeholder.com/600x800/332200/ffcc00?text=THE+GOLD",   // 18 金块
+        "https://via.placeholder.com/600x800/000000/00ffff?text=THE+VOID",   // 19 虚空
+        "https://via.placeholder.com/600x800/001a00/00ff00?text=THE+WORLD"   // 20 重塑
     ];
 
     let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set(), cardIndex=null;
     let hostConn = null; 
     let drawnCards = [], drawnCompCards = [];
     let compCardIndex = null;
+    let lastSyncTime = Date.now(); // 核心：用于检测断线的看门狗时间戳
 
     function tryCompanion() {
         if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("请先填写昵称和房号");
@@ -232,8 +238,25 @@
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) {
                 players = [{nick:myNick, isComp:true, peerId: id}]; renderUI();
-                setInterval(() => { sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); }, 1000);
-            } else { hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); setupConn(hostConn); }
+                setInterval(() => { 
+                    sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:cardIndex, compCardIndex:compCardIndex, drawnCards:drawnCards, drawnCompCards:drawnCompCards, allIds: players.map(p=>p.peerId)}); 
+                }, 1000);
+            } else { 
+                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}}); 
+                setupConn(hostConn); 
+                
+                // 📡【核心修复：断线静默重连狗】
+                // 如果玩家 4 秒内没收到房主的 SYNC 信号，说明底层数据通道已断，自动重连
+                setInterval(() => {
+                    if (Date.now() - lastSyncTime > 4000) {
+                        console.log("检测到连接掉线，正在重新连接房主...");
+                        if(hostConn) hostConn.close();
+                        hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}});
+                        setupConn(hostConn);
+                        lastSyncTime = Date.now(); // 重置时间，防止频繁狂发
+                    }
+                }, 2000);
+            }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); });
         peer.on('call', (call) => {
@@ -253,6 +276,7 @@
             if(d.type==='JOIN' && isComp) { if(!players.find(p=>p.peerId===d.peerId)) { players.push({nick:d.nick, isComp:false, peerId: d.peerId}); renderUI(); } }
             
             if(d.type==='SYNC') { 
+                lastSyncTime = Date.now(); // 收到心跳，喂狗
                 players=d.list; turnIdx=d.turnIdx; drawnCards = d.drawnCards || []; drawnCompCards = d.drawnCompCards || [];
                 if(d.isLocked && !isLocked) triggerUnlock();
                 
@@ -281,10 +305,22 @@
     }
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
-    function sendAll(d) { if (isComp) { conns.forEach(c => { if(c.open) c.send(d); }); } else { if (hostConn && hostConn.open) hostConn.send(d); } }
     
-    // [修复点1]：房主开启时也调用自身的解锁逻辑，解决盲区问题
-    function hostGo() { document.getElementById('host-start-btn').style.display='none'; triggerUnlock(); sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); }
+    function sendAll(d) { 
+        if (isComp) { 
+            conns.forEach(c => { if(c.open) c.send(d); }); 
+        } else { 
+            if (hostConn && hostConn.open) hostConn.send(d); 
+        } 
+    }
+    
+    // 双重保险：不仅通过 SYNC 修改状态，瞬间加发一个 UNLOCK 包，防延迟
+    function hostGo() { 
+        document.getElementById('host-start-btn').style.display='none'; 
+        triggerUnlock(); 
+        sendAll({type:'UNLOCK'}); 
+        sendAll({type:'SYNC', list:players, turnIdx:turnIdx, isLocked:isLocked, cardIndex:null, compCardIndex:null, drawnCards:drawnCards, drawnCompCards:drawnCompCards}); 
+    }
 
     function updateGuide() {
         const guide = document.getElementById('process-guide');
@@ -314,14 +350,13 @@
         if(document.getElementById('deck').innerHTML !== "") return;
         let h=""; 
         
-        // [修复点2]：塔罗牌只对陪伴师渲染，普通玩家看不见它们
         if(isComp) {
+            // 塔罗牌放桌面上：紫蓝渐变卡背
             for(let i=0; i<20; i++) {
                 h+=`<div id="ccard-${i}" onclick="handleCompDraw(${i})" style="flex:0 0 100px; height:178px; background:#4b0082; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #4b0082, #4b0082 8px, #0044ff 8px, #0044ff 16px); cursor:pointer; position:relative;"><div style="position:absolute; top:8px; left:8px; font-size:0.8rem; border-radius:50%; background:#000; padding:2px;">🔮</div></div>`;
             }
         }
 
-        // 普通档案卡对所有人渲染
         for(let i=0; i<40; i++) {
             h+=`<div id="card-${i}" onclick="handleDraw(${i})" style="flex:0 0 100px; height:178px; background:#2a104a; border:2px solid #555; border-radius:10px; background-image:repeating-linear-gradient(45deg, #3d1563, #3d1563 8px, #2a104a 8px, #2a104a 16px); cursor:pointer;"></div>`;
         }
@@ -347,9 +382,10 @@
         sendAll({type:'DRAW_COMP', idx:i}); showSpectrum(i);
     }
 
+    // --- 加载专属图像 ---
     function showSpectrum(idx) {
         const board = document.getElementById('comp-card-board');
-        drawSpectrumCard(idx);
+        document.getElementById('spectrum-img').src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
         board.style.display = 'flex';
         setTimeout(() => board.classList.add('show'), 50);
         document.getElementById('card-podium').style.display='block';
@@ -365,45 +401,6 @@
     function hostCmd(t) {
         if(!isComp) return;
         if(t==='CLOSE_COMP') { sendAll({type:'CLOSE_COMP'}); hideSpectrum(); compCardIndex = null; }
-    }
-
-    function drawSpectrumCard(idx) {
-        const canvas = document.getElementById('spectrum-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-        ctx.clearRect(0, 0, 320, 400);
-
-        const card = COMP_CARDS[idx];
-
-        ctx.fillStyle = card.c1; ctx.fillRect(0, 0, 320, 200);
-        ctx.fillStyle = card.c2; ctx.fillRect(0, 200, 320, 200);
-        
-        for(let i=0; i<150; i++) {
-            ctx.fillStyle = (Math.random()>0.5) ? card.c1 : card.c2;
-            ctx.fillRect(Math.random()*320, 180 + Math.random()*40, 10, 10);
-        }
-
-        ctx.font = '120px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(card.ic, 160, 200);
-
-        ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, 320, 90); ctx.fillRect(0, 280, 320, 120);
-        
-        ctx.strokeStyle = '#a333ff'; ctx.lineWidth = 6; ctx.strokeRect(3, 3, 314, 394);
-
-        ctx.fillStyle = '#ffcc00'; ctx.font = 'bold 24px "Courier New", monospace'; ctx.fillText(card.t, 160, 40);
-        ctx.fillStyle = '#aaa'; ctx.font = '12px "Courier New", monospace'; ctx.fillText(card.d, 160, 70);
-        ctx.fillStyle = '#00f2ff'; ctx.font = 'bold 16px "Courier New", monospace';
-        wrapText(ctx, card.g, 160, 320, 280, 24);
-    }
-
-    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-        const words = text.split(''); let line = '';
-        for (let n = 0; n < words.length; n++) {
-            let testLine = line + words[n]; let metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) { ctx.fillText(line, x, y); line = words[n]; y += lineHeight; } 
-            else { line = testLine; }
-        }
-        ctx.fillText(line, x, y);
     }
 
     function showArchive(idx, nick) {
