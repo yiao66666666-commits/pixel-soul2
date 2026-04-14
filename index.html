@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.31 - Immersive</title>
+    <title>SPEAK V49.32 - Global Sync</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
@@ -13,7 +13,6 @@
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.8; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 10%, #3d1563 20%); background-size: 200% 200%; animation: plasma 20s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
 
-        /* 新增：沉浸式开场弹窗 */
         #intro-overlay { position: fixed; inset: 0; z-index: 300000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; transition: opacity 1s; }
         .intro-text { color: #ccc; font-size: 1.1rem; line-height: 2.2; margin-bottom: 40px; text-shadow: 0 0 10px rgba(255,255,255,0.2); animation: fadeIn 2s ease-in-out; }
         .intro-highlight { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
@@ -176,21 +175,29 @@
     ];
 
     const CUSTOM_QS = ["你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？", "如果生命只剩最后24小时，你会去见谁？", "谁曾经对你特别好，但后来你们却断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？", "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作真的把你榨干了？", "谁的消息会让你看到就瞬间心跳加速、感到生理性不适？", "你人生中，哪一天是你打死都不想再经历第二次的？", "如果明天公司倒闭了，你第一反应是恐慌还是长舒一口气？", "给你一个机会工资减半但每天准时下班且没人找你，你会立刻答应吗？", "假如有个按钮能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果用一年寿命换取一件极其渴望但没得到的东西，你会换什么？", "给你一千万条件是立刻和父母爱人彻底绝交，你换吗？", "如果你进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母骂过你的话，你当时很不屑现在却发现自己变成了那样？", "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？", "如果你有一件隐身衣你想利用它去做什么？", "分享一个你的童年阴影，可以是电影片段或生活打击。", "哪一首歌旋律一响，你的脑子里就会无条件弹出一个人？", "如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个毫无血缘关系的人，曾给你一种像亲人一样的感觉？", "如果寿命可以像微信转账一样转给别人，你会转给谁？", "如果有一个快进键跳过现在的苦难但代价是减寿三年，你会按吗？", "假设你能参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果给你一个“合法报复一次”的额度，你会立刻用在谁身上？", "假设你明天必须彻底离开，走之前你只想最后去见一个人，是谁？", "如果你死后手机数据会被公开，你最怕被谁看到里面的哪部分？", "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念却再也找不到的一种感觉是什么？"];
-    const peerConfig = { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] } };
     
-    let peer, localStream, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
+    // 【核心修复1：加入全球免费的中继穿透服务，对抗跨国 NAT 防火墙】
+    const peerConfig = { 
+        config: { 
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' }, 
+                { urls: 'stun:global.stun.twilio.com:3478' },
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+            ] 
+        } 
+    };
+    
+    let peer, localStream = null, myNick, myRoom, isComp=false, players=[], conns=[], turnIdx=0, isLocked=false, handledIds=new Set();
     let cardIndex=null, compCardIndex=null, drawnCards=[], drawnCompCards=[], hostConn=null, hasInitialConnection=false, lastSyncTime=Date.now();
     let isEyeClosed = false;
 
-    // 音效控制函数
     function playSfx(id) { const el = document.getElementById(id); if(el) { el.currentTime = 0; el.play().catch(()=>{}); } }
     
     function dismissIntro() {
-        const intro = document.getElementById('intro-overlay');
-        intro.style.opacity = '0';
-        setTimeout(() => intro.style.display = 'none', 1000);
-        const bgm = document.getElementById('bgm-audio');
-        if(bgm) { bgm.volume = 0.3; bgm.play().catch(e=>console.log("BGM play blocked")); }
+        const intro = document.getElementById('intro-overlay'); intro.style.opacity = '0'; setTimeout(() => intro.style.display = 'none', 1000);
+        const bgm = document.getElementById('bgm-audio'); if(bgm) { bgm.volume = 0.3; bgm.play().catch(e=>console.log("BGM block")); }
         playSfx('sfx-click');
     }
 
@@ -202,21 +209,30 @@
         isComp=(m==='companion'); localStorage.setItem('sn',myNick); localStorage.setItem('sr',myRoom); 
         document.getElementById('login-screen').style.display='none'; document.getElementById('main-game').style.display='flex'; 
         if(isComp){ document.getElementById('host-start-btn').style.display='block'; document.getElementById('btn-shuffle').style.display='block'; document.getElementById('btn-eye').style.display='block'; } 
-        document.getElementById('audio-overlay').style.display='flex'; 
-        playSfx('sfx-click');
+        document.getElementById('audio-overlay').style.display='flex'; playSfx('sfx-click');
     }
 
+    // 【核心修复2：容错捕获，防止无麦克风权限导致全盘崩溃】
     async function unlockAudio() { 
-        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) { console.log("Mic blocked"); } 
-        document.getElementById('audio-overlay').style.display='none'; initNetwork(); playSfx('sfx-click');
+        try { 
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+            if(localStream.getAudioTracks().length > 0) { localStream.getAudioTracks()[0].enabled = false; }
+        } catch(e) { 
+            console.log("Mic error or denied. Running in text-only mode."); 
+            localStream = null; 
+        } 
+        document.getElementById('audio-overlay').style.display='none'; 
+        initNetwork(); playSfx('sfx-click');
     }
 
     function broadcastState() { if (!isComp) return; sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId), isEyeClosed: isEyeClosed }); }
 
     function handleStream(peerId, stream) {
-        let el = document.getElementById(`audio-${peerId}`); 
-        if(!el) { el = document.createElement('audio'); el.id = `audio-${peerId}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); } 
-        el.srcObject = stream; el.play().catch(e=>{});
+        try {
+            let el = document.getElementById(`audio-${peerId}`); 
+            if(!el) { el = document.createElement('audio'); el.id = `audio-${peerId}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); } 
+            el.srcObject = stream; el.play().catch(e=>{});
+        } catch(e) { console.warn("Stream handling error", e); }
     }
 
     function initNetwork() {
@@ -229,7 +245,14 @@
             else { hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); setInterval(() => { if (!hasInitialConnection || (Date.now() - lastSyncTime > 12000)) { hasInitialConnection = false; if(hostConn) hostConn.close(); hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); } }, 4000); }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); c.on('close', () => { if(isComp) { players = players.filter(p => p.peerId !== c.peer); renderUI(); broadcastState(); } }); });
-        peer.on('call', (call) => { handledIds.add(call.peer); call.answer(localStream); call.on('stream', (s) => handleStream(call.peer, s)); });
+        
+        peer.on('call', (call) => { 
+            try {
+                handledIds.add(call.peer); 
+                call.answer(localStream || undefined); 
+                call.on('stream', (s) => handleStream(call.peer, s)); 
+            } catch(e) { console.warn("Incoming call error", e); }
+        });
     }
 
     function setupConn(c) {
@@ -243,7 +266,20 @@
                 if (d.compCardIndex !== compCardIndex) { if (d.compCardIndex !== null) { compCardIndex = d.compCardIndex; showSpectrum(compCardIndex); } else { compCardIndex = null; hideSpectrum(); } }
                 if (d.cardIndex !== cardIndex) { if (d.cardIndex !== null) { cardIndex = d.cardIndex; showArchive(cardIndex, (players.filter(p=>!p.isComp)[turnIdx]||{}).nick); } else { cardIndex = null; hideArchive(); } }
                 renderUI(); updateGuide(); if(isLocked) updateDeckVisibility();
-                if(d.allIds) { d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) { handledIds.add(id); call.on('stream', (s) => handleStream(id, s)); } } }); }
+                
+                // 【核心修复3：安全拨号】只有本地有麦克风流，才去主动呼叫对方
+                if(d.allIds) { 
+                    d.allIds.forEach(id => { 
+                        if(id !== peer.id && !handledIds.has(id)) { 
+                            try {
+                                if (localStream) {
+                                    const call = peer.call(id, localStream); 
+                                    if(call) { handledIds.add(id); call.on('stream', (s) => handleStream(id, s)); } 
+                                }
+                            } catch(e) { console.warn("Outgoing call error", e); }
+                        } 
+                    }); 
+                }
             }
             if(d.type==='UNLOCK') triggerUnlock();
             if(d.type==='DRAW') { cardIndex = d.idx; if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); updateDeckVisibility(); showArchive(d.idx, d.nick); if(isComp) broadcastState(); }
@@ -318,7 +354,7 @@
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     
     function toggleMic() { 
-        if(!localStream) return alert("麦克风未就绪"); 
+        if(!localStream) return alert("麦克风未授权或未找到设备"); 
         playSfx('sfx-click');
         const track = localStream.getAudioTracks()[0];
         if(track) { track.enabled = !track.enabled; document.getElementById('mic-btn').classList.toggle('active', track.enabled); }
