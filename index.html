@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.30 - Visual Enhanced</title>
+    <title>SPEAK V49.31 - Immersive</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* 增强版底图动画：提升可见度至 0.8 */
         .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.8; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 10%, #3d1563 20%); background-size: 200% 200%; animation: plasma 20s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
-        
-        /* 点赞/异议粒子动画样式 */
-        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
-        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
 
+        /* 新增：沉浸式开场弹窗 */
+        #intro-overlay { position: fixed; inset: 0; z-index: 300000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; transition: opacity 1s; }
+        .intro-text { color: #ccc; font-size: 1.1rem; line-height: 2.2; margin-bottom: 40px; text-shadow: 0 0 10px rgba(255,255,255,0.2); animation: fadeIn 2s ease-in-out; }
+        .intro-highlight { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
         #login-screen { position: fixed; inset: 0; z-index: 100000; background: rgba(5,5,5,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 3px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; box-shadow: 4px 4px 0 #000; }
 
@@ -37,7 +38,6 @@
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
         #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: none; z-index: 4000; }
         
-        /* 绝对居中布局：杜绝任何手机端裁切 */
         #focus-board { 
             position: absolute; top: 45%; left: 50%; width: 82vw; height: 50vh; max-width: 340px; max-height: 400px;
             background: #fff; color: #111; border: 6px solid #000; border-radius: 18px;
@@ -56,8 +56,11 @@
         #spectrum-img { width: 100%; height: auto; max-height: 42vh; object-fit: contain; border-radius: 8px; display: none; } 
         
         .podium-hidden { opacity: 0.05 !important; pointer-events: none !important; }
+        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
+        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
 
-        .ctrl-btn { height: 40px; border: 3px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; border-radius: 8px; cursor: pointer; }
+        .ctrl-btn { height: 40px; border: 3px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .ctrl-btn:active { transform: scale(0.95); }
         .footer { height: 230px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; z-index: 100; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.8rem; color: var(--blue); }
         .btn-panel { height: 80px; display: flex; padding: 5px 10px; gap: 8px; align-items: center; justify-content: center; }
@@ -73,7 +76,23 @@
 </head>
 <body>
 
+<audio id="bgm-audio" src="https://actions.google.com/sounds/v1/ambiences/alien_breath.ogg" loop preload="auto"></audio>
+<audio id="sfx-flip" src="https://actions.google.com/sounds/v1/foley/paper_flip.ogg" preload="auto"></audio>
+<audio id="sfx-magic" src="https://actions.google.com/sounds/v1/magic/magical_focus_chime.ogg" preload="auto"></audio>
+<audio id="sfx-click" src="https://actions.google.com/sounds/v1/ui/click.ogg" preload="auto"></audio>
+
 <div class="plasma-bg"></div>
+
+<div id="intro-overlay">
+    <div class="intro-text">
+        <p>欢迎来到 <span class="intro-highlight">SPEAK</span>。</p>
+        <p>在这个空间里，请卸下伪装与防备。</p>
+        <p><span class="intro-highlight">陪伴彼此，一起成长。</span></p>
+        <p>这一刻，你是故事的叙述者；<br>下一刻，你就是他人的陪伴师。</p>
+        <p>请打开心扉，认真聆听。</p>
+    </div>
+    <button class="ctrl-btn" style="width: 220px; height: 55px; border-color: var(--blue); color: var(--blue); font-size: 1.1rem;" onclick="dismissIntro()">[ 开启灵魂共振 ]</button>
+</div>
 
 <div id="login-screen">
     <div style="font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 30px; letter-spacing: -2px;">SPEAK</div>
@@ -163,9 +182,20 @@
     let cardIndex=null, compCardIndex=null, drawnCards=[], drawnCompCards=[], hostConn=null, hasInitialConnection=false, lastSyncTime=Date.now();
     let isEyeClosed = false;
 
-    function tryCompanion() { if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("先填昵称房号"); document.getElementById('comp-pwd-in').value = ''; document.getElementById('pwd-overlay').style.display = 'flex'; }
-    function checkPwd() { if(document.getElementById('comp-pwd-in').value === '101010') { document.getElementById('pwd-overlay').style.display='none'; entry('companion'); } else { alert("密码错误"); } }
-    function restore(t) { if(t==='nick') document.getElementById('nick-in').value = localStorage.getItem('sn') || ""; if(t==='room') document.getElementById('room-in').value = localStorage.getItem('sr') || ""; }
+    // 音效控制函数
+    function playSfx(id) { const el = document.getElementById(id); if(el) { el.currentTime = 0; el.play().catch(()=>{}); } }
+    
+    function dismissIntro() {
+        const intro = document.getElementById('intro-overlay');
+        intro.style.opacity = '0';
+        setTimeout(() => intro.style.display = 'none', 1000);
+        const bgm = document.getElementById('bgm-audio');
+        if(bgm) { bgm.volume = 0.3; bgm.play().catch(e=>console.log("BGM play blocked")); }
+        playSfx('sfx-click');
+    }
+
+    function tryCompanion() { if(!document.getElementById('nick-in').value || !document.getElementById('room-in').value) return alert("先填昵称房号"); document.getElementById('comp-pwd-in').value = ''; document.getElementById('pwd-overlay').style.display = 'flex'; playSfx('sfx-click'); }
+    function checkPwd() { if(document.getElementById('comp-pwd-in').value === '101010') { document.getElementById('pwd-overlay').style.display='none'; entry('companion'); } else { alert("密码错误"); } playSfx('sfx-click'); }
     
     function entry(m) { 
         myNick=document.getElementById('nick-in').value; myRoom=document.getElementById('room-in').value; if(!myNick||!myRoom) return alert("必填"); 
@@ -173,24 +203,20 @@
         document.getElementById('login-screen').style.display='none'; document.getElementById('main-game').style.display='flex'; 
         if(isComp){ document.getElementById('host-start-btn').style.display='block'; document.getElementById('btn-shuffle').style.display='block'; document.getElementById('btn-eye').style.display='block'; } 
         document.getElementById('audio-overlay').style.display='flex'; 
+        playSfx('sfx-click');
     }
 
     async function unlockAudio() { 
-        try { 
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
-            localStream.getAudioTracks()[0].enabled = false; 
-        } catch(e) { console.log("Mic blocked"); } 
-        document.getElementById('audio-overlay').style.display='none'; initNetwork(); 
+        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getAudioTracks()[0].enabled = false; } catch(e) { console.log("Mic blocked"); } 
+        document.getElementById('audio-overlay').style.display='none'; initNetwork(); playSfx('sfx-click');
     }
 
     function broadcastState() { if (!isComp) return; sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId), isEyeClosed: isEyeClosed }); }
 
     function handleStream(peerId, stream) {
         let el = document.getElementById(`audio-${peerId}`); 
-        if(!el) { 
-            el = document.createElement('audio'); el.id = `audio-${peerId}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); 
-        } 
-        el.srcObject = stream; el.play().catch(e=>console.log("Audio play err"));
+        if(!el) { el = document.createElement('audio'); el.id = `audio-${peerId}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); } 
+        el.srcObject = stream; el.play().catch(e=>{});
     }
 
     function initNetwork() {
@@ -200,10 +226,7 @@
         peer.on('open', (id) => {
             document.getElementById('room-id-val').innerText = myRoom;
             if(isComp) { players=[{nick:myNick, isComp:true, peerId: id}]; renderUI(); setInterval(broadcastState, 2000); }
-            else { 
-                hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); 
-                setInterval(() => { if (!hasInitialConnection || (Date.now() - lastSyncTime > 12000)) { hasInitialConnection = false; if(hostConn) hostConn.close(); hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); } }, 4000); 
-            }
+            else { hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); setInterval(() => { if (!hasInitialConnection || (Date.now() - lastSyncTime > 12000)) { hasInitialConnection = false; if(hostConn) hostConn.close(); hostConn = peer.connect(`SPEAK-${myRoom}`, {metadata: {nick: myNick}, reliable: true}); setupConn(hostConn); } }, 4000); }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); c.on('close', () => { if(isComp) { players = players.filter(p => p.peerId !== c.peer); renderUI(); broadcastState(); } }); });
         peer.on('call', (call) => { handledIds.add(call.peer); call.answer(localStream); call.on('stream', (s) => handleStream(call.peer, s)); });
@@ -225,7 +248,7 @@
             if(d.type==='UNLOCK') triggerUnlock();
             if(d.type==='DRAW') { cardIndex = d.idx; if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); updateDeckVisibility(); showArchive(d.idx, d.nick); if(isComp) broadcastState(); }
             if(d.type==='CLOSE') { cardIndex = null; hideArchive(); if(isComp) { const users = players.filter(p=>!p.isComp); if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; broadcastState(); } }
-            if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); } if(isComp) sendAll(d); }
+            if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) { triggerAnim(d.msg); playSfx('sfx-click'); } } if(isComp) sendAll(d); }
             if(d.type==='DRAW_COMP') { compCardIndex = d.idx; if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); updateDeckVisibility(); showSpectrum(d.idx); if(isComp) broadcastState(); }
             if(d.type==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); if(isComp) broadcastState(); }
             if(d.type==='SHUFFLE_COMP') { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); if(isComp) broadcastState(); }
@@ -234,22 +257,17 @@
 
     function triggerUnlock() { isLocked = true; document.getElementById('deck').style.display = 'flex'; renderDeck(); updateGuide(); }
     function sendAll(d) { if (isComp) { conns = conns.filter(c => c.open); conns.forEach(c => c.send(d)); } else { if (hostConn && hostConn.open) hostConn.send(d); } }
-    function hostGo() { isLocked = true; triggerUnlock(); sendAll({type:'UNLOCK'}); document.getElementById('host-start-btn').style.display='none'; broadcastState(); }
+    function hostGo() { isLocked = true; triggerUnlock(); sendAll({type:'UNLOCK'}); document.getElementById('host-start-btn').style.display='none'; broadcastState(); playSfx('sfx-click'); }
     
     function hostCmd(t) {
         if(!isComp) return;
+        playSfx('sfx-click');
         if(t==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); broadcastState(); }
         if(t==='SHUFFLE_COMP' && confirm("洗牌所有塔罗？")) { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); sendAll({type:'SHUFFLE_COMP'}); broadcastState(); }
         if(t==='TOGGLE_EYE') { isEyeClosed = !isEyeClosed; updateEyeVisuals(); broadcastState(); }
     }
 
-    function updateEyeVisuals() {
-        const boards = [document.getElementById('focus-board'), document.getElementById('comp-card-board')];
-        const btn = document.getElementById('btn-eye');
-        boards.forEach(b => { if(b) b.classList.toggle('podium-hidden', isEyeClosed); });
-        if(btn) btn.innerText = isEyeClosed ? "👁️ 显牌" : "👁️ 藏牌";
-    }
-
+    function updateEyeVisuals() { const boards = [document.getElementById('focus-board'), document.getElementById('comp-card-board')]; const btn = document.getElementById('btn-eye'); boards.forEach(b => { if(b) b.classList.toggle('podium-hidden', isEyeClosed); }); if(btn) btn.innerText = isEyeClosed ? "👁️ 显牌" : "👁️ 藏牌"; }
     function updateGuide() { const g = document.getElementById('process-guide'); if(!isLocked) return; const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : '---'; g.innerText = cardIndex !== null ? `[ ${targetNick} ] 正在坦白...` : `轮到 [ ${targetNick} ] 开启档案...`; }
     function renderUI() { const pA = document.getElementById('player-area'); const cA = document.getElementById('companion-area'); pA.innerHTML = ""; cA.innerHTML = ""; const targetNick = (players.filter(p=>!p.isComp)[turnIdx]||{}).nick; players.forEach(p => { const isTurn = (!p.isComp && p.nick === targetNick); const h = `<div class="p-item online ${isTurn?'active-turn':''}"> <div class="p-avatar ${p.isComp?'is-companion':''}">🃏</div> <div style="font-size:0.5rem;margin-top:4px;color:#aaa;width:55px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;">${p.nick}</div> </div>`; if(p.isComp) cA.innerHTML = h; else pA.innerHTML += h; }); }
     
@@ -267,10 +285,12 @@
     }
     
     function updateDeckVisibility() { for(let i=0; i<40; i++) { const c = document.getElementById(`card-${i}`); if(c) c.style.visibility = drawnCards.includes(i) ? 'hidden' : 'visible'; } if(isComp) for(let i=0; i<20; i++) { const cc = document.getElementById(`ccard-${i}`); if(cc) cc.style.visibility = drawnCompCards.includes(i) ? 'hidden' : 'visible'; } }
-    function handleDraw(i) { const users = players.filter(p=>!p.isComp); if(isComp || (users[turnIdx]||{}).nick !== myNick || cardIndex !== null || drawnCards.includes(i)) return; sendAll({type:'DRAW', idx:i, nick:myNick}); }
-    function handleCompDraw(i) { if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return; compCardIndex = i; drawnCompCards.push(i); updateDeckVisibility(); showSpectrum(i); broadcastState(); }
+    
+    function handleDraw(i) { const users = players.filter(p=>!p.isComp); if(isComp || (users[turnIdx]||{}).nick !== myNick || cardIndex !== null || drawnCards.includes(i)) return; playSfx('sfx-flip'); sendAll({type:'DRAW', idx:i, nick:myNick}); }
+    function handleCompDraw(i) { if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return; playSfx('sfx-flip'); compCardIndex = i; drawnCompCards.push(i); updateDeckVisibility(); showSpectrum(i); broadcastState(); }
 
     function showSpectrum(idx) { 
+        playSfx('sfx-magic');
         const board = document.getElementById('comp-card-board'); const img = document.getElementById('spectrum-img'); const loader = document.getElementById('img-loader'); const btn = document.getElementById('btn-cc-close');
         loader.style.display = 'block'; img.style.display = 'none'; btn.style.display = 'none';
         img.src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
@@ -279,27 +299,27 @@
     }
 
     function hideSpectrum() { const board = document.getElementById('comp-card-board'); board.classList.remove('show'); setTimeout(() => { board.style.display = 'none'; if(cardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); }
-    function showArchive(idx, nick) { document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length]; document.getElementById('card-podium').style.display='block'; const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50); document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick); const btn = document.getElementById('btn-close'); btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; btn.disabled = (myNick !== nick); }
-    function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
-    function hideArchive() { const b = document.getElementById('focus-board'); b.classList.remove('show'); setTimeout(()=>{ b.style.display='none'; if(compCardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); }
     
-    /* 核心修复：粒子喷涌动画 */
-    function actionReact(e) { triggerAnim(e); appendChat(myNick, e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
-    function triggerAnim(e) { 
-        for(let i=0; i<10; i++) { 
-            const p=document.createElement('div'); p.className='particle'; p.innerText=e; 
-            p.style.left='50%'; p.style.top='45%'; 
-            p.style.setProperty('--dx',(Math.random()*600-300)+'px'); 
-            p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); 
-            document.body.appendChild(p); setTimeout(()=>p.remove(), 800); 
-        } 
+    function showArchive(idx, nick) { 
+        playSfx('sfx-magic');
+        document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length]; 
+        document.getElementById('card-podium').style.display='block'; const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50); 
+        document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick); 
+        const btn = document.getElementById('btn-close'); btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; btn.disabled = (myNick !== nick); 
     }
 
-    function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; }
+    function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); playSfx('sfx-click'); } }
+    function hideArchive() { const b = document.getElementById('focus-board'); b.classList.remove('show'); setTimeout(()=>{ b.style.display='none'; if(compCardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); }
+    
+    function actionReact(e) { triggerAnim(e); appendChat(myNick, e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); playSfx('sfx-click'); }
+    function triggerAnim(e) { for(let i=0; i<10; i++) { const p=document.createElement('div'); p.className='particle'; p.innerText=e; p.style.left='50%'; p.style.top='45%'; p.style.setProperty('--dx',(Math.random()*600-300)+'px'); p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); document.body.appendChild(p); setTimeout(()=>p.remove(), 800); } }
+
+    function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; playSfx('sfx-click'); }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     
     function toggleMic() { 
         if(!localStream) return alert("麦克风未就绪"); 
+        playSfx('sfx-click');
         const track = localStream.getAudioTracks()[0];
         if(track) { track.enabled = !track.enabled; document.getElementById('mic-btn').classList.toggle('active', track.enabled); }
     }
