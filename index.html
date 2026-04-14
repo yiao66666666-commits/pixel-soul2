@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.29 - Final Fix</title>
+    <title>SPEAK V49.30 - Visual Enhanced</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #050505; --pink: #ff0055; --blue: #00f2ff; --gold: #ffcc00; --purple: #a333ff; }
         * { image-rendering: pixelated; box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
         body { background: var(--bg); color: #fff; font-family: "Courier New", monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.5; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 15%, #3d1563 30%); background-size: 200% 200%; animation: plasma 15s linear infinite; }
+        /* 增强版底图动画：提升可见度至 0.8 */
+        .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.8; background: repeating-radial-gradient(circle at 50% 50%, #ff0055 0%, #050505 10%, #3d1563 20%); background-size: 200% 200%; animation: plasma 20s linear infinite; }
         @keyframes plasma { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
         
-        #login-screen { position: fixed; inset: 0; z-index: 100000; background: rgba(5,5,5,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* 点赞/异议粒子动画样式 */
+        .particle { position: fixed; pointer-events: none; animation: fly 0.8s forwards; z-index: 300000; font-size: 2.5rem; }
+        @keyframes fly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.5); opacity: 0; } }
+
+        #login-screen { position: fixed; inset: 0; z-index: 100000; background: rgba(5,5,5,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pixel-input { width: 260px; padding: 15px; background: rgba(0,0,0,0.8); border: 3px solid #333; color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 15px; box-shadow: 4px 4px 0 #000; }
 
         #main-game { display: none; flex-direction: column; height: 100vh; width: 100vw; background: transparent; }
@@ -30,40 +35,30 @@
         .p-item.active-turn { border-color: var(--blue); background: rgba(0, 242, 255, 0.1); box-shadow: 0 0 10px var(--blue); }
 
         .stage { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 4000; }
+        #card-podium { position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: none; z-index: 4000; }
         
-        /* 档案卡：绝对居中，杜绝遮挡 */
+        /* 绝对居中布局：杜绝任何手机端裁切 */
         #focus-board { 
-            position: absolute; top: 45%; left: 50%;
-            width: 82vw; height: 50vh; max-width: 360px; max-height: 400px;
+            position: absolute; top: 45%; left: 50%; width: 82vw; height: 50vh; max-width: 340px; max-height: 400px;
             background: #fff; color: #111; border: 6px solid #000; border-radius: 18px;
             padding: 20px; display: none; flex-direction: column; align-items: center; justify-content: space-between;
-            z-index: 5001; box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            transform: translate(-50%, -30%); opacity: 0; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 5001; transform: translate(-50%, -30%); opacity: 0; transition: 0.5s;
         }
         #focus-board.show { display: flex; transform: translate(-50%, -50%); opacity: 1; }
 
-        /* 塔罗板：绝对居中，强制按比例缩放，绝对不裁切 */
         #comp-card-board {
-            position: absolute; top: 45%; left: 50%;
-            width: 85vw; max-width: 380px; 
+            position: absolute; top: 45%; left: 50%; width: 85vw; max-width: 380px; 
             background: #000; border: 4px solid var(--purple); border-radius: 16px;
             padding: 10px; display: none; flex-direction: column; align-items: center;
-            z-index: 6001; box-shadow: 0 0 30px rgba(163, 51, 255, 0.4);
-            transform: translate(-50%, -50%) scale(0.8); opacity: 0; transition: 0.4s;
+            z-index: 6001; transform: translate(-50%, -50%) scale(0.8); opacity: 0; transition: 0.4s;
         }
         #comp-card-board.show { display: flex; transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        #spectrum-img { width: 100%; height: auto; max-height: 42vh; object-fit: contain; border-radius: 8px; display: none; } 
         
-        /* 图片限制最大高度，完全装在容器内 */
-        #spectrum-img { 
-            width: 100%; height: auto; max-height: 42vh; 
-            object-fit: contain; border-radius: 8px; display: none; 
-        } 
-        
-        .podium-hidden { opacity: 0.1 !important; pointer-events: none !important; }
+        .podium-hidden { opacity: 0.05 !important; pointer-events: none !important; }
 
         .ctrl-btn { height: 40px; border: 3px solid var(--blue); background: #000; color: var(--blue); font-weight: 900; border-radius: 8px; cursor: pointer; }
-        .footer { height: 220px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; z-index: 100; }
+        .footer { height: 230px; background: #000; border-top: 2px solid var(--blue); display: flex; flex-direction: column; z-index: 100; }
         #chat-flow { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.8rem; color: var(--blue); }
         .btn-panel { height: 80px; display: flex; padding: 5px 10px; gap: 8px; align-items: center; justify-content: center; }
         .mic-btn { border-radius: 50%; width: 55px; height: 55px; font-size: 1.4rem; color: #fff; border: 4px solid var(--blue); background: #000; }
@@ -81,10 +76,10 @@
 <div class="plasma-bg"></div>
 
 <div id="login-screen">
-    <div style="font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 3px 3px 0 var(--pink); margin-bottom: 30px;">SPEAK</div>
+    <div style="font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 4px 4px 0 var(--pink); margin-bottom: 30px; letter-spacing: -2px;">SPEAK</div>
     <input type="text" id="nick-in" class="pixel-input" placeholder="昵称">
     <input type="text" id="room-in" class="pixel-input" placeholder="房号">
-    <button class="ctrl-btn" style="width:260px; height:55px;" onclick="entry('join')">进入游戏</button>
+    <button class="ctrl-btn" style="width:260px; height:55px; background:var(--pink); color:#fff; border-color:var(--pink);" onclick="entry('join')">进入游戏</button>
     <button onclick="tryCompanion()" style="margin-top:20px; color:var(--purple); font-size:0.75rem; background:none; text-decoration:underline;">陪伴师入口</button>
 </div>
 
@@ -102,13 +97,13 @@
         <div id="card-podium"></div>
         <div id="focus-board">
             <div style="font-size:0.55rem; color:#999;">[ SENSITIVE FILE ]</div>
-            <div id="q-text" style="font-size:1.05rem; font-weight:bold; text-align:center; padding:5px; line-height:1.4;">档案读取中...</div>
-            <button id="btn-close" class="ctrl-btn" style="width:130px; border-width:3px;" onclick="userCmd('CLOSE')">完成回答</button>
+            <div id="q-text" style="font-size:0.95rem; font-weight:bold; text-align:center; padding:5px; line-height:1.4;">档案读取中...</div>
+            <button id="btn-close" class="ctrl-btn" style="width:130px; border-width:3px;" onclick="userCmd('CLOSE')">回答完毕</button>
         </div>
         <div id="comp-card-board">
             <div id="img-loader"></div>
             <img id="spectrum-img" src="" alt="Tarot">
-            <button id="btn-cc-close" class="ctrl-btn" style="width:150px; border-color:var(--purple); color:var(--gold); margin-top:10px; display:none;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
+            <button id="btn-cc-close" class="ctrl-btn" style="width:150px; border-color:var(--purple); color:var(--gold); margin-top:8px; display:none;" onclick="hostCmd('CLOSE_COMP')">收回塔罗</button>
         </div>
         <div id="deck" style="display:none; gap:10px; overflow-x:auto; padding:15px; width:100%;"></div>
     </div>
@@ -127,7 +122,7 @@
 <div id="pwd-overlay" class="overlay">
     <div style="background:#eee; color:#111; padding:25px; border-radius:15px; border:4px solid #000; width:80%; max-width:300px; text-align:center;">
         <h3 style="margin-bottom:15px;">认证</h3>
-        <input type="password" id="comp-pwd-in" style="width:100%; padding:10px; border:3px solid #333; margin-bottom:15px; font-size:1.4rem; text-align:center;" placeholder="暗号">
+        <input type="password" id="comp-pwd-in" style="width:100%; padding:10px; border:3px solid #333; margin-bottom:15px; font-size:1.4rem; text-align:center;" placeholder="输入暗号">
         <div style="display:flex; gap:10px;"><button class="ctrl-btn" style="flex:1; border-color:#888; color:#888;" onclick="document.getElementById('pwd-overlay').style.display='none'">返回</button><button class="ctrl-btn" style="flex:1; border-color:var(--pink); color:var(--pink);" onclick="checkPwd()">确认</button></div>
     </div>
 </div>
@@ -190,18 +185,12 @@
 
     function broadcastState() { if (!isComp) return; sendAll({ type: 'SYNC', list: players, turnIdx: turnIdx, isLocked: isLocked, cardIndex: cardIndex, compCardIndex: compCardIndex, drawnCards: drawnCards, drawnCompCards: drawnCompCards, allIds: players.map(p=>p.peerId), isEyeClosed: isEyeClosed }); }
 
-    // 【核心语音修复】确保两端都能正确挂载和播放音频
     function handleStream(peerId, stream) {
         let el = document.getElementById(`audio-${peerId}`); 
         if(!el) { 
-            el = document.createElement('audio'); 
-            el.id = `audio-${peerId}`; 
-            el.autoplay = true; 
-            el.playsInline = true; 
-            document.getElementById('audio-bridge').appendChild(el); 
+            el = document.createElement('audio'); el.id = `audio-${peerId}`; el.autoplay = true; el.playsInline = true; document.getElementById('audio-bridge').appendChild(el); 
         } 
-        el.srcObject = stream; 
-        el.play().catch(e=>console.log("Audio autoplay prevented by browser"));
+        el.srcObject = stream; el.play().catch(e=>console.log("Audio play err"));
     }
 
     function initNetwork() {
@@ -217,13 +206,7 @@
             }
         });
         peer.on('connection', (c) => { conns.push(c); setupConn(c); c.on('close', () => { if(isComp) { players = players.filter(p => p.peerId !== c.peer); renderUI(); broadcastState(); } }); });
-        
-        // 收到对方来电时，接听并播放对方的声音
-        peer.on('call', (call) => { 
-            handledIds.add(call.peer); 
-            call.answer(localStream || undefined); 
-            call.on('stream', (s) => handleStream(call.peer, s)); 
-        });
+        peer.on('call', (call) => { handledIds.add(call.peer); call.answer(localStream); call.on('stream', (s) => handleStream(call.peer, s)); });
     }
 
     function setupConn(c) {
@@ -237,24 +220,12 @@
                 if (d.compCardIndex !== compCardIndex) { if (d.compCardIndex !== null) { compCardIndex = d.compCardIndex; showSpectrum(compCardIndex); } else { compCardIndex = null; hideSpectrum(); } }
                 if (d.cardIndex !== cardIndex) { if (d.cardIndex !== null) { cardIndex = d.cardIndex; showArchive(cardIndex, (players.filter(p=>!p.isComp)[turnIdx]||{}).nick); } else { cardIndex = null; hideArchive(); } }
                 renderUI(); updateGuide(); if(isLocked) updateDeckVisibility();
-                
-                // 【核心语音修复】主动拨打电话给新加入的人，并监听他们的声音
-                if(d.allIds) { 
-                    d.allIds.forEach(id => { 
-                        if(id !== peer.id && !handledIds.has(id)) { 
-                            const call = peer.call(id, localStream || undefined); 
-                            if(call) { 
-                                handledIds.add(id); 
-                                call.on('stream', (s) => handleStream(id, s)); 
-                            } 
-                        } 
-                    }); 
-                }
+                if(d.allIds) { d.allIds.forEach(id => { if(id !== peer.id && !handledIds.has(id)) { const call = peer.call(id, localStream); if(call) { handledIds.add(id); call.on('stream', (s) => handleStream(id, s)); } } }); }
             }
             if(d.type==='UNLOCK') triggerUnlock();
             if(d.type==='DRAW') { cardIndex = d.idx; if(!drawnCards.includes(d.idx)) drawnCards.push(d.idx); updateDeckVisibility(); showArchive(d.idx, d.nick); if(isComp) broadcastState(); }
             if(d.type==='CLOSE') { cardIndex = null; hideArchive(); if(isComp) { const users = players.filter(p=>!p.isComp); if(users.length > 0) turnIdx = (turnIdx + 1) % users.length; broadcastState(); } }
-            if(d.type==='CHAT') { if (d.nick !== myNick) appendChat(d.nick, d.msg); if(isComp) sendAll(d); }
+            if(d.type==='CHAT') { if (d.nick !== myNick) { appendChat(d.nick, d.msg); if(d.isAnim) triggerAnim(d.msg); } if(isComp) sendAll(d); }
             if(d.type==='DRAW_COMP') { compCardIndex = d.idx; if(!drawnCompCards.includes(d.idx)) drawnCompCards.push(d.idx); updateDeckVisibility(); showSpectrum(d.idx); if(isComp) broadcastState(); }
             if(d.type==='CLOSE_COMP') { compCardIndex = null; hideSpectrum(); if(isComp) broadcastState(); }
             if(d.type==='SHUFFLE_COMP') { compCardIndex = null; hideSpectrum(); drawnCompCards = []; updateDeckVisibility(); if(isComp) broadcastState(); }
@@ -276,7 +247,7 @@
         const boards = [document.getElementById('focus-board'), document.getElementById('comp-card-board')];
         const btn = document.getElementById('btn-eye');
         boards.forEach(b => { if(b) b.classList.toggle('podium-hidden', isEyeClosed); });
-        if(btn) { btn.innerText = isEyeClosed ? "👁️ 显牌" : "👁️ 藏牌"; btn.style.borderColor = isEyeClosed ? "var(--pink)" : "var(--gold)"; btn.style.color = isEyeClosed ? "var(--pink)" : "var(--gold)"; }
+        if(btn) btn.innerText = isEyeClosed ? "👁️ 显牌" : "👁️ 藏牌";
     }
 
     function updateGuide() { const g = document.getElementById('process-guide'); if(!isLocked) return; const users = players.filter(p=>!p.isComp); const targetNick = users[turnIdx] ? users[turnIdx].nick : '---'; g.innerText = cardIndex !== null ? `[ ${targetNick} ] 正在坦白...` : `轮到 [ ${targetNick} ] 开启档案...`; }
@@ -300,43 +271,37 @@
     function handleCompDraw(i) { if(!isComp || compCardIndex !== null || drawnCompCards.includes(i)) return; compCardIndex = i; drawnCompCards.push(i); updateDeckVisibility(); showSpectrum(i); broadcastState(); }
 
     function showSpectrum(idx) { 
-        const board = document.getElementById('comp-card-board'); 
-        const img = document.getElementById('spectrum-img');
-        const loader = document.getElementById('img-loader');
-        const btn = document.getElementById('btn-cc-close');
+        const board = document.getElementById('comp-card-board'); const img = document.getElementById('spectrum-img'); const loader = document.getElementById('img-loader'); const btn = document.getElementById('btn-cc-close');
         loader.style.display = 'block'; img.style.display = 'none'; btn.style.display = 'none';
         img.src = COMP_CARD_URLS[idx % COMP_CARD_URLS.length];
         img.onload = () => { loader.style.display = 'none'; img.style.display = 'block'; if(isComp) btn.style.display = 'block'; };
-        board.style.display = 'flex'; setTimeout(() => board.classList.add('show'), 50); 
-        document.getElementById('card-podium').style.display='block'; 
+        board.style.display = 'flex'; setTimeout(() => board.classList.add('show'), 50); document.getElementById('card-podium').style.display='block'; 
     }
 
-    function hideSpectrum() { 
-        const board = document.getElementById('comp-card-board'); board.classList.remove('show'); 
-        setTimeout(() => { board.style.display = 'none'; if(cardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); 
-    }
-
-    function showArchive(idx, nick) { 
-        document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length]; 
-        document.getElementById('card-podium').style.display='block'; 
-        const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50); 
-        document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick); 
-        const btn = document.getElementById('btn-close'); btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; btn.disabled = (myNick !== nick); 
-    }
-
+    function hideSpectrum() { const board = document.getElementById('comp-card-board'); board.classList.remove('show'); setTimeout(() => { board.style.display = 'none'; if(cardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); }
+    function showArchive(idx, nick) { document.getElementById('q-text').innerText = CUSTOM_QS[idx % CUSTOM_QS.length]; document.getElementById('card-podium').style.display='block'; const b = document.getElementById('focus-board'); b.style.display='flex'; setTimeout(()=>b.classList.add('show'), 50); document.getElementById('btn-like').disabled = (myNick === nick); document.getElementById('btn-dis').disabled = (myNick === nick); document.getElementById('btn-trans').disabled = (myNick !== nick); const btn = document.getElementById('btn-close'); btn.innerText = myNick === nick ? "完成回答" : "等待发言..."; btn.disabled = (myNick !== nick); }
     function userCmd(t) { if(t==='CLOSE') { hideArchive(); sendAll({type:'CLOSE'}); } }
     function hideArchive() { const b = document.getElementById('focus-board'); b.classList.remove('show'); setTimeout(()=>{ b.style.display='none'; if(compCardIndex === null) document.getElementById('card-podium').style.display='none'; }, 500); }
-    function actionReact(e) { appendChat(myNick, e); sendAll({type:'CHAT', nick:myNick, msg:e}); }
+    
+    /* 核心修复：粒子喷涌动画 */
+    function actionReact(e) { triggerAnim(e); appendChat(myNick, e); sendAll({type:'CHAT', nick:myNick, msg:e, isAnim:true}); }
+    function triggerAnim(e) { 
+        for(let i=0; i<10; i++) { 
+            const p=document.createElement('div'); p.className='particle'; p.innerText=e; 
+            p.style.left='50%'; p.style.top='45%'; 
+            p.style.setProperty('--dx',(Math.random()*600-300)+'px'); 
+            p.style.setProperty('--dy',(Math.random()*-600-100)+'px'); 
+            document.body.appendChild(p); setTimeout(()=>p.remove(), 800); 
+        } 
+    }
+
     function sendTextChat() { const input = document.getElementById('chat-input'); const msg = input.value.trim(); if(!msg) return; appendChat(myNick, msg); sendAll({type:'CHAT', nick:myNick, msg:msg}); input.value = ''; }
     function appendChat(n, m) { const b=document.getElementById('chat-flow'); b.innerHTML+=`<div><span style="color:var(--gold)">${n}:</span> ${m}</div>`; b.scrollTop=b.scrollHeight; }
     
     function toggleMic() { 
-        if(!localStream) return alert("麦克风未授权或未找到设备"); 
+        if(!localStream) return alert("麦克风未就绪"); 
         const track = localStream.getAudioTracks()[0];
-        if(track) {
-            track.enabled = !track.enabled; 
-            document.getElementById('mic-btn').classList.toggle('active', track.enabled); 
-        }
+        if(track) { track.enabled = !track.enabled; document.getElementById('mic-btn').classList.toggle('active', track.enabled); }
     }
 </script>
 </body>
