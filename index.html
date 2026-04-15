@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPEAK V49.36 - Network Fast Track</title>
+    <title>SPEAK V49.37 - Fluid Flow</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
-        /* 🌌 全新色彩规范：午夜、烛火、星云 */
+        /* 🌌 色彩规范：午夜、烛火、星云 */
         :root { 
             --bg-deep: #080911; 
             --bg-mid: #121420; 
@@ -26,8 +26,24 @@
         body { background: var(--bg-deep); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .mono { font-family: "Courier New", monospace; }
         
-        .plasma-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.9; background: radial-gradient(circle at 50% 50%, #1a1625 0%, #080911 70%); }
-        .plasma-bg::after { content: ''; position: absolute; inset: 0; background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.04"/></svg>'); pointer-events: none; }
+        /* 🌊 核心改动：幽水暗流背景动效 */
+        .plasma-bg { 
+            position: fixed; inset: 0; z-index: -1; 
+            background: linear-gradient(-45deg, #050b14, #0c1222, #101630, #080911);
+            background-size: 400% 400%; 
+            animation: waterFlow 15s ease-in-out infinite; 
+        }
+        .plasma-bg::after { 
+            content: ''; position: absolute; inset: 0; 
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.03"/></svg>'); 
+            pointer-events: none; 
+            mix-blend-mode: overlay;
+        }
+        @keyframes waterFlow { 
+            0% { background-position: 0% 50%; } 
+            50% { background-position: 100% 50%; } 
+            100% { background-position: 0% 50%; } 
+        }
 
         #intro-overlay { position: fixed; inset: 0; z-index: 300000; background: #050508; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; transition: opacity 1.5s ease; }
         .intro-text { color: #aaa; font-size: 1.05rem; line-height: 2.4; margin-bottom: 50px; animation: fadeIn 2s ease-in-out; letter-spacing: 1px; }
@@ -36,7 +52,7 @@
         
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
 
-        #login-screen { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,9,17,0.9); backdrop-filter: blur(10px); }
+        #login-screen { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,9,17,0.85); backdrop-filter: blur(10px); }
         .pixel-input { width: 260px; padding: 16px; background: rgba(0,0,0,0.5); border: 2px solid var(--glass-border); color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 20px; border-radius: 12px; transition: 0.3s; }
         .pixel-input:focus { border-color: var(--gold); box-shadow: 0 0 15px var(--gold-glow); }
 
@@ -235,7 +251,6 @@
 
     const CUSTOM_QS = ["你上一次哭，是因为什么？", "你觉得这辈子最对不起的人是谁？", "童年里哪一件看似很小的事情，其实一直负面影响你到现在？", "此时此刻，你生活中最大的焦虑源头究竟是什么？", "如果生命只剩最后24小时，你会去见谁？", "谁曾经对你特别好，但后来你们却断了联系？", "你这辈子，最想收到谁的一句“对不起”？", "摘下所有的面具，你觉得自己到底有多累？", "你上一次对最亲近的人撒的谎是什么？", "哪一个瞬间，你突然觉得这份工作真的把你榨干了？", "谁的消息会让你看到就瞬间心跳加速、感到生理性不适？", "你人生中，哪一天是你打死都不想再经历第二次的？", "如果明天公司倒闭了，你第一反应是恐慌还是长舒一口气？", "给你一个机会工资减半但每天准时下班且没人找你，你会立刻答应吗？", "假如有个按钮能彻底清空你关于某一个人的所有记忆，你会按吗？", "如果用一年寿命换取一件极其渴望但没得到的东西，你会换什么？", "给你一千万条件是立刻和父母爱人彻底绝交，你换吗？", "如果你进入一个永远醒不来的美梦，你希望梦里的场景是什么样的？", "假设有一瓶吐真剂，你会给谁喝？问他什么问题？", "哪一句父母骂过你的话，你当时很不屑现在却发现自己变成了那样？", "如果明天的太阳不再升起，你今晚的最后一顿饭想吃什么？", "如果你有一件隐身衣你想利用它去做什么？", "分享一个你的童年阴影，可以是电影片段或生活打击。", "哪一首歌旋律一响，你的脑子里就会无条件弹出一个人？", "如果有人递给你一张任意目的地的单程机票，你想立刻飞去哪？", "哪一个毫无血缘关系的人，曾给你一种像亲人一样的感觉？", "如果寿命可以像微信转账一样转给别人，你会转给谁？", "如果有一个快进键跳过现在的苦难但代价是减寿三年，你会按吗？", "假设你能参加自己的葬礼，你觉得谁会在角落里哭得最伤心？", "如果给你一个“合法报复一次”的额度，你会立刻用在谁身上？", "假设你明天必须彻底离开，走之前你只想最后去见一个人，是谁？", "如果你死后手机数据会被公开，你最怕被谁看到里面的哪部分？", "如果可以用一句话总结你上一段失败的感情，你会说什么？", "你现在极度怀念却再也找不到的一种感觉是什么？"];
     
-    // 【核心修复：替换为无限制的 Cloudflare 全球极速节点，确保新马直连】
     const peerConfig = { 
         config: { 
             'iceServers': [
@@ -244,7 +259,7 @@
                 { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
                 { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
             ],
-            'iceCandidatePoolSize': 2 // 强制加速寻找通道
+            'iceCandidatePoolSize': 2
         } 
     };
     
